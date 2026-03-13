@@ -20,41 +20,28 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- LIMPEZA TOTAL DE INTERFACE (PARA PRINT) ---------- */
+
+        /* ---------- OCULTAR MENU STREAMLIT ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
-        
-        /* Oculta botões Manage App, Deploy, Toolbar e decorações de borda */
-        .stAppToolbar, 
-        .stAppDeployButton, 
-        [data-testid="bundle-version-info"], 
-        [data-testid="stManageAppButton"],
-        [data-testid="stHeader"],
-        button[title="Manage app"] {{
-            display: none !important;
-            visibility: hidden !important;
-        }}
 
-        /* Remove a margem superior que o header oculto deixa */
-        [data-testid="stAppViewContainer"] {{
-            padding-top: 0rem;
-        }}
+        .stDeployButton {{display:none;}}
+        [data-testid="stToolbar"] {{display:none;}}
+        [data-testid="stDecoration"] {{display:none;}}
+        [data-testid="stStatusWidget"] {{display:none;}}
 
-        .stDeployButton {{display:none !important;}}
-        [data-testid="stToolbar"] {{display:none !important;}}
-        [data-testid="stDecoration"] {{display:none !important;}}
-        [data-testid="stStatusWidget"] {{display:none !important;}}
+        /* ---------- LAYOUT ---------- */
 
-        /* ---------- LAYOUT GERAL ---------- */
         .stApp {{ background: {BG}; }}
-        .block-container {{ padding-top: 1rem; padding-bottom: 1rem; max-width: 98%; }}
+        .block-container {{ padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }}
 
         .hero {{
             background: linear-gradient(135deg, {ORANGE} 0%, #fb923c 100%);
             color: white;
             padding: 1.25rem 1.5rem;
             border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,.08);
             margin-bottom: 1rem;
         }}
 
@@ -65,53 +52,49 @@ def inject_css() -> None:
             background: {WHITE};
             border: 1px solid {BORDER};
             border-radius: 14px;
-            padding: 1.2rem;
-            text-align: center;
+            padding: 1.2rem 1.3rem;
             box-shadow: 0 4px 16px rgba(15,23,42,.05);
         }}
 
         .section-title {{
             background: {ORANGE};
             color: white;
-            padding: .7rem 1.2rem;
+            padding: .8rem 1.2rem;
             border-radius: 12px 12px 0 0;
             font-weight: 700;
-            margin-top: 1.2rem;
-            font-size: 1.3rem;
             border: 1px solid {BORDER};
             border-bottom: 0;
+            margin-top: 1rem;
+            font-size: 1.3rem;
         }}
 
-        /* ---------- TABELAS (FONTES MAIORES E COLUNA TOTAL FIXA) ---------- */
         .table-wrap {{
             background: {WHITE};
             border: 1px solid {BORDER};
             border-radius: 0 0 12px 12px;
+            overflow: hidden;
             margin-bottom: 1rem;
-            overflow-x: auto;
-            width: 100%;
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
             font-size: 1.15rem; /* Fonte aumentada */
-            table-layout: auto;
         }}
 
         table.hh-table th {{
             background: {ORANGE};
             color: white;
             border: 1px solid {BORDER};
-            padding: .7rem .5rem;
+            padding: .8rem .7rem;
             text-align: center;
-            font-size: 1.1rem;
             white-space: nowrap;
+            font-size: 1.2rem; /* Cabeçalho mais visível */
         }}
 
         table.hh-table td {{
             border: 1px solid {BORDER};
-            padding: .7rem .5rem;
+            padding: .7rem;
             text-align: center;
             color: {DARK};
         }}
@@ -120,23 +103,15 @@ def inject_css() -> None:
             text-align: left;
             font-weight: 700;
             background: #fff7ed;
-            min-width: 200px; /* Protege nomes de operadores */
         }}
 
-        table.hh-table td.total-col {{ 
-            font-weight: 900; 
-            background: #f1f5f9; 
-            min-width: 85px; /* Garante que o total não suma */
-        }}
+        table.hh-table td.total-col {{ font-weight: 900; background: #f1f5f9; }}
 
-        .legend {{ color: #475569; font-size: 1rem; margin-top: 0.5rem; margin-bottom: 1rem; }}
+        .legend {{ color: #475569; font-size: 1rem; margin-top: -.25rem; margin-bottom: .75rem; }}
 
         .small-note {{ color: #64748b; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }}
 
-        /* Ocultar o botão de download para o print sair limpo */
-        [data-testid="stDownloadButton"], .stDownloadButton {{
-            display: none !important;
-        }}
+        .stFileUploader > div > div {{ background: {WHITE}; border-radius: 12px; }}
 
         </style>
         """,
@@ -150,32 +125,48 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     rename_map = {}
     for col in df.columns:
         low = col.lower()
-        if "pacote" in low: rename_map[col] = "Pacote"
-        elif "data de escaneamento" in low: rename_map[col] = "Data de Escaneamento"
-        elif "situa" in low: rename_map[col] = "Situação"
-        elif "área" in low or "area" in low: rename_map[col] = "Área"
-        elif "operador" in low: rename_map[col] = "Operador"
-        elif "coment" in low: rename_map[col] = "Comentário"
-    
+        if "pacote" in low:
+            rename_map[col] = "Pacote"
+        elif "data de escaneamento" in low:
+            rename_map[col] = "Data de Escaneamento"
+        elif "situa" in low:
+            rename_map[col] = "Situação"
+        elif "área" in low or "area" in low:
+            rename_map[col] = "Área"
+        elif "operador" in low:
+            rename_map[col] = "Operador"
+        elif "coment" in low:
+            rename_map[col] = "Comentário"
     df = df.rename(columns=rename_map)
     required = ["Data de Escaneamento", "Situação"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"Colunas obrigatórias ausentes: {', '.join(missing)}")
     for optional in ["Área", "Operador", "Comentário", "Pacote"]:
-        if optional not in df.columns: df[optional] = pd.NA
+        if optional not in df.columns:
+            df[optional] = pd.NA
     return df
 
 
 def parse_hour(value) -> float:
-    if pd.isna(value): return pd.NA
+    if pd.isna(value):
+        return pd.NA
     text = str(value).strip()
-    if not text: return pd.NA
-    time_part = text.split("|")[0].strip().replace(".", ":")
+    if not text:
+        return pd.NA
+    time_part = text.split("|")[0].strip()
+    time_part = time_part.replace(".", ":")
     match = re.search(r"(\d{1,2}:\d{2}\s*[ap]m)", time_part, flags=re.I)
-    if match: time_part = match.group(1)
+    if match:
+        time_part = match.group(1)
     for fmt in ("%I:%M%p", "%I:%M %p", "%H:%M"):
         parsed = pd.to_datetime(time_part, format=fmt, errors="coerce")
-        if not pd.isna(parsed): return int(parsed.hour)
+        if not pd.isna(parsed):
+            return int(parsed.hour)
     flexible = pd.to_datetime(time_part, errors="coerce")
-    return int(flexible.hour) if not pd.isna(flexible) else pd.NA
+    if not pd.isna(flexible):
+        return int(flexible.hour)
+    return pd.NA
 
 
 def format_hour(hour_value: int) -> str:
@@ -192,9 +183,13 @@ def prepare_base_dataframe(file_bytes: bytes, uploaded_name: str) -> pd.DataFram
         df = pd.read_csv(io.BytesIO(file_bytes))
     else:
         excel = pd.ExcelFile(io.BytesIO(file_bytes))
-        preferred = next((n for n in excel.sheet_names if "BASE INICIAL INVENTÁRIO" in n.upper()), excel.sheet_names[0])
+        preferred = None
+        for name in excel.sheet_names:
+            if name.strip().upper() == "BASE INICIAL INVENTÁRIO":
+                preferred = name
+                break
+        preferred = preferred or excel.sheet_names[0]
         df = pd.read_excel(excel, sheet_name=preferred)
-    
     df = normalize_columns(df)
     df["Situação"] = df["Situação"].astype(str).str.strip()
     df["Operador"] = df["Operador"].astype("string").str.strip()
@@ -206,7 +201,8 @@ def summarize_by_status(df: pd.DataFrame, hours: list[int], hour_labels: list[st
     rows = []
     for status in STATUS_ORDER:
         subset = df[df["Situação"] == status]
-        row = OrderedDict({"QTD / Status": status})
+        row = OrderedDict()
+        row["QTD / Status"] = status
         for hour, label in zip(hours, hour_labels):
             row[label] = int((subset["Hora"] == hour).sum())
         row["TOTAL"] = int(len(subset))
@@ -220,23 +216,27 @@ def summarize_by_operator(df: pd.DataFrame, status: str, title_prefix: str, hour
     rows = []
     for operator in operators:
         op_subset = subset[subset["Operador"] == operator]
-        row = OrderedDict({title_prefix: operator})
+        row = OrderedDict()
+        row[title_prefix] = operator
         for hour, label in zip(hours, hour_labels):
             row[label] = int((op_subset["Hora"] == hour).sum())
         row["TOTAL"] = int(len(op_subset))
         rows.append(row)
-    return f"{title_prefix}: {len(operators)}", pd.DataFrame(rows)
+    title = f"{title_prefix}: {len(operators)}"
+    return title, pd.DataFrame(rows)
 
 
 def render_table(df: pd.DataFrame) -> None:
     if df.empty:
         st.info("Sem dados para exibir nesta seção.")
         return
-    headers = list(df.columns)
+    display_df = df.copy()
+    display_df = display_df.fillna("")
+    headers = list(display_df.columns)
     html = ["<div class='table-wrap'><table class='hh-table'><thead><tr>"]
     html.extend([f"<th>{h}</th>" for h in headers])
     html.append("</tr></thead><tbody>")
-    for _, row in df.fillna("").iterrows():
+    for _, row in display_df.iterrows():
         html.append("<tr>")
         for idx, value in enumerate(row.tolist()):
             cls = "total-col" if idx == len(headers) - 1 else ""
@@ -249,65 +249,99 @@ def render_table(df: pd.DataFrame) -> None:
 def main() -> None:
     inject_css()
 
-    st.markdown('<div class="hero"><h1>HH Inventário</h1><p>Painel de acompanhamento automático.</p></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="hero">
+            <h1>HH Inventário</h1>
+            <p>Painel de acompanhamento automático.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    uploaded = st.file_uploader("Upload da base (.xlsx ou .csv)", type=["xlsx", "xls", "csv"])
+    uploaded = st.file_uploader(
+        "Upload da base (.xlsx ou .csv)",
+        type=["xlsx", "xls", "csv"],
+    )
 
     if not uploaded:
         st.stop()
 
     try:
-        df = prepare_base_dataframe(uploaded.getvalue(), uploaded.name)
+        file_bytes = uploaded.getvalue()
+        df = prepare_base_dataframe(file_bytes, uploaded.name)
     except Exception as exc:
-        st.error(f"Erro ao ler arquivo: {exc}")
+        st.error(f"Não foi possível ler o arquivo: {exc}")
         st.stop()
 
     valid_hours = sorted([int(h) for h in df["Hora"].dropna().unique().tolist()])
     if not valid_hours:
-        st.error("Nenhuma hora válida encontrada.")
+        st.error("Não foi possível identificar nenhuma hora válida.")
         st.stop()
 
     base_hour = min(valid_hours)
-    hours, hour_labels = build_hour_columns(list(range(base_hour, base_hour + 8)))
+    hours = list(range(base_hour, base_hour + 8))
+    hours, hour_labels = build_hour_columns(hours)
 
-    # Métricas Superiores
+    total_registros = len(df)
+    total_verificados = int((df["Situação"] == "Verificados").sum())
+    total_pendentes = int((df["Situação"] == "Pendente").sum())
+    total_deslocados = int((df["Situação"] == "Deslocado").sum())
+
     c1, c2, c3, c4 = st.columns(4)
-    m_data = [
-        (c1, "Volume Total", f"{len(df):,}".replace(",", ".")),
-        (c2, "Verificados", f"{int((df['Situação'] == 'Verificados').sum()):,}".replace(",", ".")),
-        (c3, "Pendentes", f"{int((df['Situação'] == 'Pendente').sum()):,}".replace(",", ".")),
-        (c4, "Deslocados", f"{int((df['Situação'] == 'Deslocado').sum()):,}".replace(",", ".")),
+    metrics = [
+        (c1, "Volume Total", f"{total_registros:,}".replace(",", ".")),
+        (c2, "Verificados", f"{total_verificados:,}".replace(",", ".")),
+        (c3, "Pendentes", f"{total_pendentes:,}".replace(",", ".")),
+        (c4, "Deslocados", f"{total_deslocados:,}".replace(",", ".")),
     ]
-    for container, label, value in m_data:
-        container.markdown(f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:2.3rem;font-weight:800;color:{DARK}'>{value}</div></div>", unsafe_allow_html=True)
+    for container, label, value in metrics:
+        container.markdown(
+            f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:2.3rem;font-weight:800;color:{DARK}'>{value}</div></div>",
+            unsafe_allow_html=True,
+        )
 
-    # Pendentes Zona
+    # ---------------- PENDENTES ZONA ----------------
     if "Área" in df.columns:
         st.markdown("<div class='section-title'>Pendentes Zona</div>", unsafe_allow_html=True)
         zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
         cols = st.columns(5)
-        for i, z in enumerate(zonas):
-            val = counts.get(z, 0)
+        for i,z in enumerate(zonas):
+            val = counts.get(z,0)
             with cols[i % 5]:
-                st.markdown(f'<div style="background:white; border-left:6px solid {ORANGE}; padding:15px; border-radius:10px; text-align:center; box-shadow:0px 2px 6px rgba(0,0,0,0.08); margin-bottom:10px;"><div style="font-size:15px; color:#64748b; font-weight:600;">{z}</div><div style="font-size:32px; font-weight:bold; color:{DARK}">{val}</div></div>', unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background:white; border-left:6px solid {ORANGE}; padding:15px; border-radius:10px; text-align:center; box-shadow:0px 2px 6px rgba(0,0,0,0.08); margin-bottom:10px;">
+                    <div style="font-size:15px; color:#64748b; font-weight:600;">{z}</div>
+                    <div style="font-size:32px; font-weight:bold; color:{DARK}">{val}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-    st.markdown(f"<div class='legend'>Janela horária: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='legend'>Janela horária: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>",
+        unsafe_allow_html=True,
+    )
 
-    # Tabelas
+    status_df = summarize_by_status(df, hours, hour_labels)
+    verif_title, verif_df = summarize_by_operator(df, "Verificados", "Verificados / Conferentes", hours, hour_labels)
+    desloc_title, desloc_df = summarize_by_operator(df, "Deslocado", "Deslocados / Conferentes", hours, hour_labels)
+
     st.markdown("<div class='section-title'>Resumo HH</div>", unsafe_allow_html=True)
-    render_table(summarize_by_status(df, hours, hour_labels))
+    render_table(status_df)
 
-    v_title, v_df = summarize_by_operator(df, "Verificados", "Verificados / Conferentes", hours, hour_labels)
-    st.markdown(f"<div class='section-title'>{v_title}</div>", unsafe_allow_html=True)
-    render_table(v_df)
+    st.markdown(f"<div class='section-title'>{verif_title}</div>", unsafe_allow_html=True)
+    render_table(verif_df)
 
-    d_title, d_df = summarize_by_operator(df, "Deslocado", "Deslocados / Conferentes", hours, hour_labels)
-    st.markdown(f"<div class='section-title'>{d_title}</div>", unsafe_allow_html=True)
-    render_table(d_df)
+    st.markdown(f"<div class='section-title'>{desloc_title}</div>", unsafe_allow_html=True)
+    render_table(desloc_df)
 
-    # Botão de Download (Oculto no CSS, mas funcional no código)
-    st.download_button("Baixar base tratada em CSV", data=df.to_csv(index=False).encode("utf-8-sig"), file_name="base_tratada_inventario.csv", mime="text/csv", use_container_width=True)
+    st.download_button(
+        "Baixar base tratada em CSV",
+        data=df.to_csv(index=False).encode("utf-8-sig"),
+        file_name="base_tratada_inventario.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
 if __name__ == "__main__":
     main()
