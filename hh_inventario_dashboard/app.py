@@ -277,7 +277,7 @@ def main() -> None:
 
     c1, c2, c3, c4 = st.columns(4)
     metrics = [
-        (c1, "Base carregada", f"{total_registros:,}".replace(",", ".")),
+        (c1, "Volume Total", f"{total_registros:,}".replace(",", ".")),
         (c2, "Verificados", f"{total_verificados:,}".replace(",", ".")),
         (c3, "Pendentes", f"{total_pendentes:,}".replace(",", ".")),
         (c4, "Deslocados", f"{total_deslocados:,}".replace(",", ".")),
