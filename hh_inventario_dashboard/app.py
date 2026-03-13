@@ -32,6 +32,15 @@ def inject_css() -> None:
         [data-testid="stDecoration"] {{display:none;}}
         [data-testid="stStatusWidget"] {{display:none;}}
 
+        /* ---------- CORREÇÃO HTML2CANVAS (ESPAÇOS EM BRANCO) ---------- */
+        /* Força a renderização normal para evitar que palavras se juntem no print */
+        * {{
+            text-rendering: geometricPrecision !important;
+            font-variant-ligatures: none !important;
+            word-spacing: normal !important;
+            letter-spacing: normal !important;
+        }}
+
         /* ---------- LAYOUT ---------- */
 
         .stApp {{ background: {BG}; }}
@@ -66,7 +75,7 @@ def inject_css() -> None:
             border: 1px solid {BORDER};
             border-bottom: 0;
             margin-top: .5rem;
-            font-size: 1.15rem; /* Aumentado */
+            font-size: 1.15rem;
         }}
 
         .table-wrap {{
@@ -80,22 +89,22 @@ def inject_css() -> None:
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.15rem; /* Fonte da tabela aumentada (era 0.95rem) */
+            font-size: 1.15rem; 
         }}
 
         table.hh-table th {{
             background: {ORANGE};
             color: white;
             border: 1px solid {BORDER};
-            padding: .8rem .6rem; /* Padding aumentado */
+            padding: .8rem .6rem; 
             text-align: center;
             white-space: nowrap;
-            font-size: 1.2rem; /* Cabeçalho ainda maior */
+            font-size: 1.2rem; 
         }}
 
         table.hh-table td {{
             border: 1px solid {BORDER};
-            padding: .7rem; /* Padding aumentado */
+            padding: .7rem; 
             text-align: center;
             color: {DARK};
         }}
