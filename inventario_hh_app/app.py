@@ -1,6 +1,7 @@
 import io
 import re
 from collections import OrderedDict
+
 import pandas as pd
 import streamlit as st
 
@@ -9,185 +10,339 @@ st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 ORANGE = "#f59e0b"
 DARK = "#1f2937"
 BORDER = "#d1d5db"
-BG = "#f8fafc"
+BG = "#f3f4f6"
 WHITE = "#ffffff"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 
-# ---------- CSS ----------
-def inject_css():
-    st.markdown(f"""
-    <style>
 
-    .stApp {{ background:{BG}; }}
+def inject_css() -> None:
+    st.markdown(
+        f"""
+<style>
+.stApp {{
+    background: {BG};
+}}
 
-    .hero {{
-        background:linear-gradient(135deg,{ORANGE},#fb923c);
-        color:white;
-        padding:1.2rem;
-        border-radius:14px;
-        margin-bottom:20px;
-    }}
+.block-container {{
+    max-width: 1400px;
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}}
 
-    .metric {{
-        background:white;
-        padding:15px;
-        border-radius:10px;
-        border:1px solid {BORDER};
-        text-align:center;
-        font-weight:700;
-    }}
+.hero {{
+    background: linear-gradient(135deg, {ORANGE} 0%, #fb923c 100%);
+    color: white;
+    padding: 1.4rem 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1.2rem;
+}}
 
-    .section {{
-        background:{ORANGE};
-        color:white;
-        padding:8px;
-        font-weight:700;
-        border-radius:8px 8px 0 0;
-        margin-top:20px;
-    }}
+.hero h1 {{
+    margin: 0;
+    font-size: 2rem;
+}}
 
-    table.hh {{
-        width:100%;
-        border-collapse:collapse;
-        font-size:14px;
-    }}
+.hero p {{
+    margin: 0.35rem 0 0 0;
+    font-size: 0.98rem;
+}}
 
-    table.hh th {{
-        background:{ORANGE};
-        color:white;
-        padding:6px;
-        border:1px solid {BORDER};
-    }}
+.metric-card {{
+    background: {WHITE};
+    border: 1px solid {BORDER};
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 4px 14px rgba(15,23,42,0.05);
+}}
 
-    table.hh td {{
-        border:1px solid {BORDER};
-        padding:6px;
-        text-align:center;
-    }}
+.metric-label {{
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-bottom: 0.15rem;
+}}
 
-    table.hh td:first-child {{
-        font-weight:bold;
-        text-align:left;
-        background:#fff7ed;
-    }}
+.metric-value {{
+    color: {DARK};
+    font-size: 1.8rem;
+    font-weight: 800;
+}}
 
-    /* Pendentes Zona */
+.section-title {{
+    background: {ORANGE};
+    color: white;
+    padding: 0.65rem 0.9rem;
+    font-weight: 700;
+    border-radius: 10px 10px 0 0;
+    margin-top: 1rem;
+}}
 
-    .pend-top {{
-        display:grid;
-        grid-template-columns:2fr 1fr;
-        border:2px solid black;
-        margin-bottom:10px;
-    }}
+.table-wrap {{
+    background: {WHITE};
+    border: 1px solid {BORDER};
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}}
 
-    .pend-left {{
-        background:{ORANGE};
-        padding:25px;
-        text-align:center;
-        font-weight:bold;
-        font-size:20px;
-        border-right:2px solid black;
-    }}
+table.hh-table {{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.94rem;
+}}
 
-    .pend-right {{
-        background:{ORANGE};
-        padding:25px;
-        text-align:center;
-        font-weight:bold;
-        font-size:20px;
-    }}
+table.hh-table th {{
+    background: {ORANGE};
+    color: white;
+    border: 1px solid {BORDER};
+    padding: 0.55rem 0.45rem;
+    text-align: center;
+    white-space: nowrap;
+}}
 
-    .pend-row {{
-        display:grid;
-        grid-template-columns:2fr 1fr;
-    }}
+table.hh-table td {{
+    border: 1px solid {BORDER};
+    padding: 0.52rem;
+    text-align: center;
+    color: {DARK};
+}}
 
-    .pend-name {{
-        background:{ORANGE};
-        padding:8px;
-        font-weight:bold;
-        border-bottom:1px solid black;
-    }}
+table.hh-table td:first-child {{
+    text-align: left;
+    font-weight: 700;
+    background: #fff7ed;
+}}
 
-    .pend-value {{
-        background:#e5e7eb;
-        padding:8px;
-        text-align:right;
-        border-bottom:1px solid black;
-    }}
+table.hh-table td.total-col {{
+    font-weight: 700;
+}}
 
-    </style>
-    """, unsafe_allow_html=True)
+.legend {{
+    color: #475569;
+    font-size: 0.92rem;
+    margin: 0.55rem 0 0.9rem 0;
+}}
 
-# ---------- NORMALIZA COLUNAS ----------
-def normalize_columns(df):
-    rename = {}
+/* Pendentes Zona */
+.pend-wrapper {{
+    background: {WHITE};
+    border: 1px solid {BORDER};
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}}
 
-    for c in df.columns:
+.pend-head {{
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+}}
 
-        low = c.lower()
+.pend-head-left,
+.pend-head-right {{
+    background: {ORANGE};
+    color: white;
+    font-weight: 700;
+    text-align: center;
+    padding: 1rem 0.75rem;
+    border: 1px solid {BORDER};
+}}
 
-        if "data" in low:
-            rename[c] = "Data de Escaneamento"
+.pend-head-left {{
+    border-right: 1px solid #000;
+}}
 
-        if "situa" in low:
-            rename[c] = "Situação"
+.pend-row {{
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+}}
 
-        if "operador" in low:
-            rename[c] = "Operador"
+.pend-name {{
+    background: {ORANGE};
+    color: #111827;
+    font-weight: 700;
+    padding: 0.62rem 0.7rem;
+    border: 1px solid #000;
+    border-top: 0;
+}}
 
-        if "area" in low or "área" in low:
-            rename[c] = "Área"
+.pend-value {{
+    background: #e5e7eb;
+    color: #111827;
+    text-align: right;
+    padding: 0.62rem 0.7rem;
+    border: 1px solid #000;
+    border-top: 0;
+}}
 
-    df = df.rename(columns=rename)
+.small-note {{
+    color: #64748b;
+    font-size: 0.82rem;
+}}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
 
-    for col in ["Operador","Área"]:
-        if col not in df.columns:
-            df[col] = ""
+
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
+
+    rename_map = {}
+    for col in df.columns:
+        low = col.lower()
+        if "pacote" in low:
+            rename_map[col] = "Pacote"
+        elif "data de escaneamento" in low or ("data" in low and "escane" in low):
+            rename_map[col] = "Data de Escaneamento"
+        elif "situa" in low:
+            rename_map[col] = "Situação"
+        elif "área" in low or "area" in low:
+            rename_map[col] = "Área"
+        elif "operador" in low:
+            rename_map[col] = "Operador"
+        elif "coment" in low:
+            rename_map[col] = "Comentário"
+
+    df = df.rename(columns=rename_map)
+
+    required = ["Data de Escaneamento", "Situação"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"Colunas obrigatórias ausentes: {', '.join(missing)}")
+
+    for optional in ["Área", "Operador", "Comentário", "Pacote"]:
+        if optional not in df.columns:
+            df[optional] = pd.NA
 
     return df
 
-# ---------- HORA ----------
-def parse_hour(v):
 
-    try:
+def parse_hour(value):
+    if pd.isna(value):
+        return pd.NA
 
-        v = str(v).split("|")[0]
+    text = str(value).strip()
+    if not text:
+        return pd.NA
 
-        t = pd.to_datetime(v)
+    time_part = text.split("|")[0].strip()
+    time_part = time_part.replace(".", ":")
 
-        return t.hour
+    match = re.search(r"(\d{1,2}:\d{2}\s*[ap]m)", time_part, flags=re.I)
+    if match:
+        time_part = match.group(1)
 
-    except:
-        return None
+    for fmt in ("%I:%M%p", "%I:%M %p", "%H:%M"):
+        parsed = pd.to_datetime(time_part, format=fmt, errors="coerce")
+        if not pd.isna(parsed):
+            return int(parsed.hour)
 
-# ---------- TABELA ----------
-def render_table(df):
+    flexible = pd.to_datetime(time_part, errors="coerce")
+    if not pd.isna(flexible):
+        return int(flexible.hour)
 
-    html = "<table class='hh'>"
+    return pd.NA
 
-    html += "<tr>"
-    for c in df.columns:
-        html += f"<th>{c}</th>"
-    html += "</tr>"
 
-    for _,r in df.iterrows():
+def format_hour(hour_value: int) -> str:
+    return f"{int(hour_value):02d}h"
 
-        html += "<tr>"
 
-        for v in r:
-            html += f"<td>{v}</td>"
+def build_hour_columns(hours: list[int]) -> tuple[list[int], list[str]]:
+    labels = [f"{idx + 1}ª Hora ({format_hour(hour)})" for idx, hour in enumerate(hours)]
+    return hours, labels
 
-        html += "</tr>"
 
-    html += "</table>"
+def prepare_base_dataframe(file_bytes: bytes, uploaded_name: str) -> pd.DataFrame:
+    if uploaded_name.lower().endswith(".csv"):
+        df = pd.read_csv(io.BytesIO(file_bytes))
+    else:
+        excel = pd.ExcelFile(io.BytesIO(file_bytes))
+        preferred = None
+        for name in excel.sheet_names:
+            if name.strip().upper() == "BASE INICIAL INVENTÁRIO":
+                preferred = name
+                break
+        preferred = preferred or excel.sheet_names[0]
+        df = pd.read_excel(excel, sheet_name=preferred)
 
-    st.markdown(html,unsafe_allow_html=True)
+    df = normalize_columns(df)
+    df["Situação"] = df["Situação"].astype(str).str.strip()
+    df["Operador"] = df["Operador"].astype("string").str.strip()
+    df["Área"] = df["Área"].astype("string").str.strip()
+    df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
+    return df
 
-# ---------- PENDENTES ZONA ----------
-def render_pendentes_zona(df):
 
+def summarize_by_status(df: pd.DataFrame, hours: list[int], hour_labels: list[str]) -> pd.DataFrame:
+    rows = []
+    for status in STATUS_ORDER:
+        subset = df[df["Situação"] == status]
+        row = OrderedDict()
+        row["Status"] = status
+        for hour, label in zip(hours, hour_labels):
+            row[label] = int((subset["Hora"] == hour).sum())
+        row["Total"] = int(len(subset))
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def summarize_by_operator(
+    df: pd.DataFrame,
+    status: str,
+    title_prefix: str,
+    hours: list[int],
+    hour_labels: list[str],
+) -> tuple[str, pd.DataFrame]:
+    subset = df[
+        (df["Situação"] == status)
+        & df["Operador"].notna()
+        & (df["Operador"].str.len() > 0)
+    ]
+
+    operators = list(dict.fromkeys(subset["Operador"].tolist()))
+    rows = []
+
+    for operator in operators:
+        op_subset = subset[subset["Operador"] == operator]
+        row = OrderedDict()
+        row["Operador"] = operator
+        for hour, label in zip(hours, hour_labels):
+            row[label] = int((op_subset["Hora"] == hour).sum())
+        row["Total"] = int(len(op_subset))
+        rows.append(row)
+
+    title = f"{title_prefix}: {len(operators)}"
+    return title, pd.DataFrame(rows)
+
+
+def render_table(df: pd.DataFrame) -> None:
+    if df.empty:
+        st.info("Sem dados para exibir nesta seção.")
+        return
+
+    display_df = df.copy().fillna("")
+    headers = list(display_df.columns)
+
+    html = ["<div class='table-wrap'><table class='hh-table'><thead><tr>"]
+    html.extend([f"<th>{h}</th>" for h in headers])
+    html.append("</tr></thead><tbody>")
+
+    for _, row in display_df.iterrows():
+        html.append("<tr>")
+        for idx, value in enumerate(row.tolist()):
+            cls = "total-col" if idx == len(headers) - 1 else ""
+            html.append(f"<td class='{cls}'>{value}</td>")
+        html.append("</tr>")
+
+    html.append("</tbody></table></div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+
+
+def render_pendentes_zona(df: pd.DataFrame) -> None:
     zonas = [
         "Returns",
         "Sorting",
@@ -198,139 +353,133 @@ def render_pendentes_zona(df):
         "Buffered",
         "Dispatch",
         "Containerized",
-        "Bulky returns"
+        "Bulky returns",
     ]
 
-    counts = df["Área"].value_counts().to_dict()
+    area_series = df["Área"].fillna("").astype(str).str.strip()
+    counts = area_series.value_counts().to_dict()
 
-    html = """
-    <div class='pend-top'>
-    <div class='pend-left'>Pendentes<br>Zona</div>
-    <div class='pend-right'>Total</div>
-    </div>
-    """
+    parts = []
+    parts.append("<div class='pend-wrapper'>")
+    parts.append("<div class='pend-head'>")
+    parts.append("<div class='pend-head-left'>Pendentes<br>Zona</div>")
+    parts.append("<div class='pend-head-right'>Total</div>")
+    parts.append("</div>")
 
-    for z in zonas:
+    for zona in zonas:
+        valor = int(counts.get(zona, 0))
+        parts.append("<div class='pend-row'>")
+        parts.append(f"<div class='pend-name'>{zona}</div>")
+        parts.append(f"<div class='pend-value'>{valor}</div>")
+        parts.append("</div>")
 
-        v = counts.get(z,0)
+    parts.append("</div>")
 
-        html += f"""
-        <div class='pend-row'>
-        <div class='pend-name'>{z}</div>
-        <div class='pend-value'>{v}</div>
-        </div>
-        """
+    st.markdown("".join(parts), unsafe_allow_html=True)
 
-    st.markdown(html,unsafe_allow_html=True)
 
-# ---------- MAIN ----------
-def main():
-
+def main() -> None:
     inject_css()
 
-    st.markdown("""
-    <div class='hero'>
-    <h2>HH Inventário</h2>
-    Dashboard automático baseado na BASE INICIAL INVENTÁRIO
-    </div>
-    """,unsafe_allow_html=True)
+    st.markdown(
+        """
+<div class="hero">
+    <h1>HH Inventário</h1>
+    <p>Dashboard automático baseado na BASE INICIAL INVENTÁRIO.</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-    file = st.file_uploader("Upload da base inventário",type=["xlsx","csv"])
+    uploaded = st.file_uploader(
+        "Upload da base (.xlsx ou .csv)",
+        type=["xlsx", "xls", "csv"],
+        help="Preferencialmente um arquivo com a estrutura da guia BASE INICIAL INVENTÁRIO.",
+    )
 
-    if not file:
+    if not uploaded:
         st.stop()
 
-    if file.name.endswith("csv"):
+    try:
+        file_bytes = uploaded.getvalue()
+        df = prepare_base_dataframe(file_bytes, uploaded.name)
+    except Exception as exc:
+        st.error(f"Não foi possível ler o arquivo: {exc}")
+        st.stop()
 
-        df = pd.read_csv(file)
+    valid_hours = sorted([int(h) for h in df["Hora"].dropna().unique().tolist()])
+    if not valid_hours:
+        st.error("Não foi possível identificar nenhuma hora válida na coluna 'Data de Escaneamento'.")
+        st.stop()
 
-    else:
+    base_hour = min(valid_hours)
+    hours = list(range(base_hour, base_hour + 8))
+    hours, hour_labels = build_hour_columns(hours)
 
-        excel = pd.ExcelFile(file)
+    total_registros = len(df)
+    total_verificados = int((df["Situação"] == "Verificados").sum())
+    total_pendentes = int((df["Situação"] == "Pendente").sum())
+    total_deslocados = int((df["Situação"] == "Deslocado").sum())
 
-        sheet = excel.sheet_names[0]
+    c1, c2, c3, c4 = st.columns(4)
+    metrics = [
+        (c1, "Base carregada", f"{total_registros:,}".replace(",", ".")),
+        (c2, "Verificados", f"{total_verificados:,}".replace(",", ".")),
+        (c3, "Pendentes", f"{total_pendentes:,}".replace(",", ".")),
+        (c4, "Deslocados", f"{total_deslocados:,}".replace(",", ".")),
+    ]
 
-        df = pd.read_excel(excel,sheet)
+    for container, label, value in metrics:
+        container.markdown(
+            f"""
+<div class='metric-card'>
+    <div class='metric-label'>{label}</div>
+    <div class='metric-value'>{value}</div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 
-    df = normalize_columns(df)
+    st.markdown(
+        f"<div class='legend'>Janela horária usada no painel: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>",
+        unsafe_allow_html=True,
+    )
 
-    df["Hora"] = df["Data de Escaneamento"].apply(parse_hour)
-
-    total = len(df)
-
-    ver = (df["Situação"]=="Verificados").sum()
-
-    pen = (df["Situação"]=="Pendente").sum()
-
-    des = (df["Situação"]=="Deslocado").sum()
-
-    c1,c2,c3,c4 = st.columns(4)
-
-    c1.metric("Base",total)
-
-    c2.metric("Verificados",ver)
-
-    c3.metric("Pendentes",pen)
-
-    c4.metric("Deslocados",des)
-
-    # ---------- PENDENTES ZONA ----------
-
-    st.markdown("<div class='section'>Pendentes Zona</div>",unsafe_allow_html=True)
-
+    st.markdown("<div class='section-title'>Pendentes Zona</div>", unsafe_allow_html=True)
     render_pendentes_zona(df)
 
-    # ---------- HH STATUS ----------
+    status_df = summarize_by_status(df, hours, hour_labels)
+    verif_title, verif_df = summarize_by_operator(
+        df,
+        "Verificados",
+        "Verificados por Operador",
+        hours,
+        hour_labels,
+    )
+    desloc_title, desloc_df = summarize_by_operator(
+        df,
+        "Deslocado",
+        "Deslocados por Operador",
+        hours,
+        hour_labels,
+    )
 
-    st.markdown("<div class='section'>HH Inventário</div>",unsafe_allow_html=True)
-
-    base = df["Hora"].min()
-
-    hours = list(range(base,base+8))
-
-    rows=[]
-
-    for s in STATUS_ORDER:
-
-        sub=df[df["Situação"]==s]
-
-        r={"Status":s}
-
-        for h in hours:
-
-            r[f"{h}h"]=(sub["Hora"]==h).sum()
-
-        r["Total"]=len(sub)
-
-        rows.append(r)
-
-    status_df=pd.DataFrame(rows)
-
+    st.markdown("<div class='section-title'>HH Inventário</div>", unsafe_allow_html=True)
     render_table(status_df)
 
-    # ---------- OPERADORES ----------
+    st.markdown(f"<div class='section-title'>{verif_title}</div>", unsafe_allow_html=True)
+    render_table(verif_df)
 
-    st.markdown("<div class='section'>Verificados por Operador</div>",unsafe_allow_html=True)
+    st.markdown(f"<div class='section-title'>{desloc_title}</div>", unsafe_allow_html=True)
+    render_table(desloc_df)
 
-    ops=df[df["Situação"]=="Verificados"]["Operador"].dropna().unique()
+    st.download_button(
+        "Baixar base tratada em CSV",
+        data=df.to_csv(index=False).encode("utf-8-sig"),
+        file_name="base_tratada_inventario.csv",
+        mime="text/csv",
+    )
 
-    rows=[]
-
-    for o in ops:
-
-        sub=df[(df["Operador"]==o)&(df["Situação"]=="Verificados")]
-
-        r={"Operador":o}
-
-        for h in hours:
-
-            r[f"{h}h"]=(sub["Hora"]==h).sum()
-
-        r["Total"]=len(sub)
-
-        rows.append(r)
-
-    render_table(pd.DataFrame(rows))
 
 if __name__ == "__main__":
     main()
