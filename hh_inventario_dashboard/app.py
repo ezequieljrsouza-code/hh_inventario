@@ -20,10 +20,20 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- OCULTAR MENU STREAMLIT ---------- */
+        /* ---------- OCULTAR ELEMENTOS DE GERENCIAMENTO (PARA PRINT LIMPO) ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
+        
+        /* Oculta os botões "Manage app" e decorações de desenvolvedor */
+        .stAppToolbar, .stAppDeployButton, [data-testid="bundle-version-info"], [data-testid="stManageAppButton"] {{
+            display: none !important;
+        }}
+        
+        /* Garante que o botão de Manage App flutuante suma */
+        button[title="Manage app"] {{
+            display: none !important;
+        }}
 
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
@@ -32,7 +42,7 @@ def inject_css() -> None:
 
         /* ---------- LAYOUT ---------- */
         .stApp {{ background: {BG}; }}
-        .block-container {{ padding-top: 1.5rem; padding-bottom: 2rem; max-width: 95%; }} /* Aumentado para dar mais margem lateral */
+        .block-container {{ padding-top: 1rem; padding-bottom: 1rem; max-width: 95%; }}
 
         .hero {{
             background: linear-gradient(135deg, {ORANGE} 0%, #fb923c 100%);
@@ -42,46 +52,28 @@ def inject_css() -> None:
             margin-bottom: 1rem;
         }}
 
-        .metric-card {{
-            background: {WHITE};
-            border: 1px solid {BORDER};
-            border-radius: 14px;
-            padding: 1rem;
-            text-align: center;
-        }}
-
-        .section-title {{
-            background: {ORANGE};
-            color: white;
-            padding: .6rem 1rem;
-            border-radius: 12px 12px 0 0;
-            font-weight: 700;
-            margin-top: 1rem;
-            font-size: 1.2rem;
-        }}
-
         /* ---------- TABELAS (AJUSTE DE LARGURA) ---------- */
         .table-wrap {{
             background: {WHITE};
             border: 1px solid {BORDER};
             border-radius: 0 0 12px 12px;
             margin-bottom: 1rem;
-            overflow-x: auto; /* Adiciona scroll horizontal se necessário */
+            overflow-x: auto;
             width: 100%;
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.1rem; /* Fonte equilibrada */
-            table-layout: auto; /* Permite que colunas se ajustem ao conteúdo */
+            font-size: 1.1rem;
+            table-layout: auto;
         }}
 
         table.hh-table th {{
             background: {ORANGE};
             color: white;
             border: 1px solid {BORDER};
-            padding: .6rem .4rem; /* Padding reduzido para caber tudo */
+            padding: .6rem .4rem;
             text-align: center;
             font-size: 1.05rem;
             white-space: nowrap;
@@ -98,20 +90,26 @@ def inject_css() -> None:
             text-align: left;
             font-weight: 700;
             background: #fff7ed;
-            min-width: 200px; /* Garante que o nome do operador não quebre */
+            min-width: 180px;
         }}
 
         table.hh-table td.total-col {{ 
             font-weight: 800; 
             background: #f1f5f9; 
-            min-width: 80px;
+            min-width: 70px;
+        }}
+
+        /* Ocultar o botão de download no print (opcional) */
+        @media print {{
+            .stDownloadButton {{
+                display: none !important;
+            }}
         }}
 
         </style>
         """,
         unsafe_allow_html=True,
     )
-
 def render_table(df: pd.DataFrame) -> None:
     if df.empty:
         st.info("Sem dados para exibir nesta seção.")
