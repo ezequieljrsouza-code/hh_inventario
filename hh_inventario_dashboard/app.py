@@ -15,32 +15,6 @@ STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 # ---------- CSS ----------
 st.markdown(f"""
 <style>
-.stApp {{ background:{BG}; }}
-
-.hero {{
-background:linear-gradient(135deg,{ORANGE},#fb923c);
-color:white;
-padding:1.3rem;
-border-radius:14px;
-margin-bottom:1rem;
-}}
-
-.metric-card {{
-background:white;
-border-radius:12px;
-padding:1rem;
-text-align:center;
-border:1px solid {BORDER};
-}}
-
-.section-title {{
-background:{ORANGE};
-color:white;
-padding:.6rem 1rem;
-border-radius:8px;
-margin-top:1rem;
-font-weight:bold;
-}}
 
 table.hh-table {{
 width:100%;
@@ -51,21 +25,23 @@ font-size:0.95rem;
 table.hh-table th {{
 background:{ORANGE};
 color:white;
+border:2px solid black;
 padding:.6rem;
-border:1px solid {BORDER};
 }}
 
 table.hh-table td {{
-border:1px solid {BORDER};
+border:2px solid black;
 padding:.5rem;
 text-align:center;
+background:#e5e7eb;
 }}
 
 table.hh-table td:first-child {{
-text-align:left;
+background:#fde68a;
 font-weight:bold;
-background:#fff7ed;
+text-align:left;
 }}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -141,20 +117,44 @@ def render_zona_cards(df):
 # ---------- EXPORTAR IMAGEM ----------
 def export_dashboard_image(df):
 
-    fig, ax = plt.subplots(figsize=(12,3))
+    fig, ax = plt.subplots(figsize=(12,2))
+
     ax.axis('off')
 
     table = ax.table(
         cellText=df.values,
         colLabels=df.columns,
+        cellLoc='center',
         loc='center'
     )
 
     table.auto_set_font_size(False)
     table.set_fontsize(10)
 
+    for (row,col), cell in table.get_celld().items():
+
+        cell.set_edgecolor("black")
+        cell.set_linewidth(2)
+
+        if row == 0:
+            cell.set_facecolor("#f59e0b")
+            cell.get_text().set_color("white")
+
+        elif col == 0:
+            cell.set_facecolor("#fde68a")
+
+        else:
+            cell.set_facecolor("#e5e7eb")
+
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
+
+    plt.savefig(
+        buf,
+        format="png",
+        bbox_inches="tight",
+        dpi=300
+    )
+
     buf.seek(0)
 
     st.download_button(
