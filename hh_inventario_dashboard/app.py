@@ -1,5 +1,5 @@
-
 import io
+import re
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -8,7 +8,6 @@ st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
 ORANGE = "#f59e0b"
 BG = "#f8fafc"
-BORDER = "#d1d5db"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 
@@ -16,22 +15,26 @@ STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 st.markdown(f"""
 <style>
 
-table.hh-table {{
-width:100%;
-border-collapse:collapse;
-font-size:0.95rem;
+.stApp {{
+background:{BG};
 }}
 
-table.hh-table th {{
+.section-title {{
 background:{ORANGE};
 color:white;
-border:2px solid black;
 padding:.6rem;
+font-weight:bold;
+margin-top:20px;
+}}
+
+table.hh-table {{
+border-collapse:collapse;
+width:100%;
 }}
 
 table.hh-table td {{
-border:2px solid black;
-padding:.5rem;
+border:2px solid #000000;
+padding:.55rem;
 text-align:center;
 background:#e5e7eb;
 }}
@@ -42,42 +45,63 @@ font-weight:bold;
 text-align:left;
 }}
 
+table.hh-table th {{
+background:#f59e0b;
+color:white;
+border:2px solid #000000;
+padding:.55rem;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
-
 # ---------- NORMALIZAR COLUNAS ----------
 def normalize_columns(df):
+
     rename = {}
+
     for c in df.columns:
+
         low = c.lower()
+
         if "data" in low:
             rename[c] = "Data de Escaneamento"
+
         if "situa" in low:
             rename[c] = "Situação"
+
         if "operador" in low:
             rename[c] = "Operador"
+
         if "area" in low or "área" in low:
             rename[c] = "Área"
+
     df = df.rename(columns=rename)
+
     return df
 
 
-# ---------- TABELA HTML ----------
+# ---------- RENDER TABELA ----------
 def render_table(df):
+
     html = "<table class='hh-table'>"
+
     html += "<tr>"
     for c in df.columns:
         html += f"<th>{c}</th>"
     html += "</tr>"
 
     for _, r in df.iterrows():
+
         html += "<tr>"
+
         for v in r:
             html += f"<td>{v}</td>"
+
         html += "</tr>"
 
     html += "</table>"
+
     st.markdown(html, unsafe_allow_html=True)
 
 
@@ -114,65 +138,68 @@ def render_zona_cards(df):
         """, unsafe_allow_html=True)
 
 
-# ---------- EXPORTAR IMAGEM ----------
-def export_dashboard_image(df):
+# ---------- EXPORTAR PAINEL COMPLETO ----------
+def export_dashboard_image(status_df, ver_df, des_df):
 
-    fig, ax = plt.subplots(figsize=(12,2))
+    fig, axs = plt.subplots(3,1, figsize=(16,10))
 
-    ax.axis('off')
+    tables = [
+        ("HH Inventário", status_df),
+        ("Verificados / Conferentes", ver_df),
+        ("Deslocados / Conferentes", des_df)
+    ]
 
-    table = ax.table(
-        cellText=df.values,
-        colLabels=df.columns,
-        cellLoc='center',
-        loc='center'
-    )
+    for ax, (title, df) in zip(axs, tables):
 
-    table.auto_set_font_size(False)
-    table.set_fontsize(10)
+        ax.axis('off')
 
-    for (row,col), cell in table.get_celld().items():
+        table = ax.table(
+            cellText=df.values,
+            colLabels=df.columns,
+            loc='center',
+            cellLoc='center'
+        )
 
-        cell.set_edgecolor("black")
-        cell.set_linewidth(2)
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
 
-        if row == 0:
-            cell.set_facecolor("#f59e0b")
-            cell.get_text().set_color("white")
+        for (row,col), cell in table.get_celld().items():
 
-        elif col == 0:
-            cell.set_facecolor("#fde68a")
+            cell.set_edgecolor("black")
+            cell.set_linewidth(2)
 
-        else:
-            cell.set_facecolor("#e5e7eb")
+            if row == 0:
+                cell.set_facecolor("#f59e0b")
+                cell.get_text().set_color("white")
+
+            elif col == 0:
+                cell.set_facecolor("#fde68a")
+
+            else:
+                cell.set_facecolor("#e5e7eb")
+
+        ax.set_title(title, fontsize=14, fontweight="bold")
 
     buf = io.BytesIO()
 
-    plt.savefig(
-        buf,
-        format="png",
-        bbox_inches="tight",
-        dpi=300
-    )
+    plt.tight_layout()
+
+    plt.savefig(buf, format="png", dpi=300)
 
     buf.seek(0)
 
     st.download_button(
-        "📸 Baixar imagem para WhatsApp",
+        "📸 Baixar painel completo para WhatsApp",
         data=buf,
-        file_name="hh_inventario.png",
+        file_name="hh_inventario_dashboard.png",
         mime="image/png"
     )
 
 
 # ---------- HEADER ----------
-st.markdown("""
-<div class='hero'>
-<h1>HH Inventário</h1>
-Dashboard automático baseado na BASE INICIAL INVENTÁRIO
-</div>
-""", unsafe_allow_html=True)
+st.title("HH Inventário")
 
+st.write("Dashboard automático baseado na BASE INICIAL INVENTÁRIO")
 
 # ---------- UPLOAD ----------
 file = st.file_uploader("Upload BASE INICIAL INVENTÁRIO", type=["xlsx","csv"])
@@ -188,11 +215,12 @@ else:
 df = normalize_columns(df)
 
 if "Data de Escaneamento" not in df.columns:
+
     st.error("Coluna 'Data de Escaneamento' não encontrada.")
+
     st.stop()
 
-import re
-
+# ---------- EXTRAIR HORA ----------
 def extrair_hora(valor):
 
     if pd.isna(valor):
@@ -200,8 +228,7 @@ def extrair_hora(valor):
 
     texto = str(valor)
 
-    # procura padrão HH:MM
-    match = re.search(r'(\d{1,2}):(\d{2})', texto)
+    match = re.search(r'(\\d{1,2}):(\\d{2})', texto)
 
     if match:
         return int(match.group(1))
@@ -215,20 +242,28 @@ def extrair_hora(valor):
 df["Hora"] = df["Data de Escaneamento"].apply(extrair_hora)
 
 if df["Hora"].dropna().empty:
-    st.error("Não foi possível identificar horas válidas na coluna 'Data de Escaneamento'. Verifique o formato da coluna.")
+
+    st.error("Não foi possível identificar horas válidas na coluna 'Data de Escaneamento'.")
+
     st.stop()
 
 # ---------- MÉTRICAS ----------
 total = len(df)
+
 ver = (df["Situação"] == "Verificados").sum()
+
 pen = (df["Situação"] == "Pendente").sum()
+
 des = (df["Situação"] == "Deslocado").sum()
 
 c1,c2,c3,c4 = st.columns(4)
 
 c1.metric("Base", total)
+
 c2.metric("Verificados", ver)
+
 c3.metric("Pendentes", pen)
+
 c4.metric("Deslocados", des)
 
 # ---------- ZONAS ----------
@@ -239,45 +274,74 @@ if "Área" in df.columns:
 st.markdown("<div class='section-title'>HH Inventário</div>", unsafe_allow_html=True)
 
 base_hour = int(df["Hora"].dropna().min())
+
 hours = list(range(base_hour, base_hour + 8))
 
 rows = []
+
 for s in STATUS_ORDER:
+
     sub = df[df["Situação"] == s]
+
     r = {"QTD / Status": s}
+
     for h in hours:
+
         r[f"{h}h"] = (sub["Hora"] == h).sum()
+
     r["TOTAL"] = len(sub)
+
     rows.append(r)
 
 status_df = pd.DataFrame(rows)
 
 render_table(status_df)
-export_dashboard_image(status_df)
 
 # ---------- OPERADORES ----------
 def summarize_operator(df, status, hours):
+
     sub = df[df["Situação"] == status]
+
     ops = sub["Operador"].dropna().unique()
+
     rows = []
+
     for o in ops:
+
         op = sub[sub["Operador"] == o]
+
         r = {"Operador": o}
+
         for h in hours:
+
             r[f"{h}h"] = (op["Hora"] == h).sum()
+
         r["TOTAL"] = len(op)
+
         rows.append(r)
+
     return pd.DataFrame(rows)
 
+
 st.markdown("<div class='section-title'>Verificados / Conferentes</div>", unsafe_allow_html=True)
+
 ver_df = summarize_operator(df,"Verificados",hours)
+
 if not ver_df.empty:
     render_table(ver_df)
 
+
 st.markdown("<div class='section-title'>Deslocados / Conferentes</div>", unsafe_allow_html=True)
+
 des_df = summarize_operator(df,"Deslocado",hours)
+
 if not des_df.empty:
     render_table(des_df)
+
+
+# ---------- BOTÃO WHATSAPP ----------
+export_dashboard_image(status_df, ver_df, des_df)
+
 
 # ---------- EXPORTAR BASE ----------
 st.download_button(
