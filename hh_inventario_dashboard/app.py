@@ -19,7 +19,21 @@ STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 def inject_css() -> None:
     st.markdown(
         f"""
-        <style>
+# ---------- OCULTAR MENU STREAMLIT ----------
+# remove menu superior, footer e botões
+
+<style>
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+.stDeployButton {display:none;}
+[data-testid="stToolbar"] {display:none;}
+[data-testid="stDecoration"] {display:none;}
+[data-testid="stStatusWidget"] {display:none;}
+
+</style>
             .stApp {{ background: {BG}; }}
             .block-container {{ padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }}
             .hero {{
