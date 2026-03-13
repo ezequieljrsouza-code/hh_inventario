@@ -48,13 +48,30 @@ def inject_css() -> None:
         .hero h1 {{ margin: 0; font-size: 2rem; }}
         .hero p {{ margin: .35rem 0 0 0; font-size: 1rem; opacity: 0.95; }}
 
-        .metric-card {{
-            background: {WHITE};
-            border: 1px solid {BORDER};
-            border-radius: 14px;
-            padding: 1rem 1.15rem;
-            box-shadow: 0 4px 16px rgba(15,23,42,.05);
-        }}
+.metric-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    border-top: 6px solid #f59e0b;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    transition: transform .15s ease;
+}
+
+.metric-card:hover{
+    transform: translateY(-3px);
+}
+
+.metric-label{
+    font-size:14px;
+    color:#64748b;
+    margin-bottom:8px;
+}
+
+.metric-value{
+    font-size:40px;
+    font-weight:800;
+    color:#1f2937;
+}}
 
         .section-title {{
             background: {ORANGE};
@@ -309,11 +326,15 @@ def main() -> None:
         (c3, "Pendentes", f"{total_pendentes:,}".replace(",", ".")),
         (c4, "Deslocados", f"{total_deslocados:,}".replace(",", ".")),
     ]
-    for container, label, value in metrics:
-        container.markdown(
-            f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:1.9rem;font-weight:800;color:{DARK}'>{value}</div></div>",
-            unsafe_allow_html=True,
-        )
+container.markdown(
+    f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     # ---------------- PENDENTES ZONA ----------------
 
     if "Área" in df.columns:
