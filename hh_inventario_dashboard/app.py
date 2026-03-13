@@ -287,7 +287,41 @@ def main() -> None:
             f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:1.9rem;font-weight:800;color:{DARK}'>{value}</div></div>",
             unsafe_allow_html=True,
         )
+    # ---------------- PENDENTES ZONA ----------------
 
+    if "Área" in df.columns:
+
+        st.markdown("<div class='section-title'>Pendentes Zona</div>", unsafe_allow_html=True)
+
+        zonas = [
+            "Returns","Sorting","Problem Solving","Missort",
+            "Fraude","Damaged","Buffered","Dispatch",
+            "Containerized","Bulky returns"
+        ]
+
+        counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
+
+        cols = st.columns(5)
+
+        for i,z in enumerate(zonas):
+
+            val = counts.get(z,0)
+
+            with cols[i % 5]:
+
+                st.markdown(f"""
+                <div style="
+                background:white;
+                border-left:6px solid {ORANGE};
+                padding:15px;
+                border-radius:10px;
+                text-align:center;
+                box-shadow:0px 2px 6px rgba(0,0,0,0.08)
+                ">
+                <div style="font-size:13px;color:#64748b">{z}</div>
+                <div style="font-size:28px;font-weight:bold;color:{DARK}">{val}</div>
+                </div>
+                """, unsafe_allow_html=True)
     st.markdown(
         f"<div class='legend'>Janela horária usada no painel: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>",
         unsafe_allow_html=True,
