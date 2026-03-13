@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
@@ -66,7 +65,6 @@ def inject_css() -> None:
             border: 1px solid {BORDER};
             border-bottom: 0;
             margin-top: .5rem;
-            font-size: 1.15rem; /* Aumentado */
         }}
 
         .table-wrap {{
@@ -80,22 +78,21 @@ def inject_css() -> None:
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.15rem; /* Fonte da tabela aumentada (era 0.95rem) */
+            font-size: 0.95rem;
         }}
 
         table.hh-table th {{
             background: {ORANGE};
             color: white;
             border: 1px solid {BORDER};
-            padding: .8rem .6rem; /* Padding aumentado */
+            padding: .6rem .55rem;
             text-align: center;
             white-space: nowrap;
-            font-size: 1.2rem; /* Cabeçalho ainda maior */
         }}
 
         table.hh-table td {{
             border: 1px solid {BORDER};
-            padding: .7rem; /* Padding aumentado */
+            padding: .55rem;
             text-align: center;
             color: {DARK};
         }}
@@ -106,85 +103,17 @@ def inject_css() -> None:
             background: #fff7ed;
         }}
 
-        table.hh-table td.total-col {{ font-weight: 700; font-size: 1.25rem; }}
+        table.hh-table td.total-col {{ font-weight: 700; }}
 
-        .legend {{ color: #475569; font-size: 1.05rem; margin-top: -.25rem; margin-bottom: .75rem; }}
+        .legend {{ color: #475569; font-size: .92rem; margin-top: -.25rem; margin-bottom: .75rem; }}
 
-        .small-note {{ color: #64748b; font-size: 0.95rem; font-weight: bold; }}
+        .small-note {{ color: #64748b; font-size: .82rem; }}
 
         .stFileUploader > div > div {{ background: {WHITE}; border-radius: 12px; }}
 
         </style>
         """,
         unsafe_allow_html=True,
-    )
-
-
-def render_capture_button():
-    """Injeta um botão HTML/JS para tirar print da tela e baixar como imagem"""
-    components.html(
-        """
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <style>
-        .btn-capture {
-            background-color: #10b981; /* Verde no estilo WhatsApp */
-            color: white;
-            border: none;
-            padding: 14px 24px;
-            text-align: center;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: 0.3s;
-            width: 100%;
-            font-family: sans-serif;
-            margin-top: 10px;
-        }
-        .btn-capture:hover {
-            background-color: #059669;
-        }
-        </style>
-        <button class="btn-capture" onclick="capture()">
-            📸 Capturar Painel como Imagem (WhatsApp)
-        </button>
-        <script>
-        function capture() {
-            var btn = document.querySelector('.btn-capture');
-            var originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ Gerando imagem...';
-            
-            // Procura o container principal do Streamlit no documento pai (já que roda num iframe)
-            var target = window.parent.document.querySelector('.block-container');
-            
-            if(target) {
-                html2canvas(target, {
-                    scale: 2, // Garante alta resolução
-                    useCORS: true,
-                    backgroundColor: '#f8fafc' // Cor de fundo da aplicação
-                }).then(canvas => {
-                    var link = document.createElement('a');
-                    link.download = 'painel_inventario.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    btn.innerHTML = originalText;
-                }).catch(err => {
-                    console.error('Erro na captura:', err);
-                    btn.innerHTML = '❌ Erro ao capturar';
-                    setTimeout(() => { btn.innerHTML = originalText; }, 3000);
-                });
-            } else {
-                btn.innerHTML = '❌ Container não encontrado';
-            }
-        }
-        </script>
-        """,
-        height=80
     )
 
 
@@ -381,12 +310,10 @@ def main() -> None:
         (c4, "Deslocados", f"{total_deslocados:,}".replace(",", ".")),
     ]
     for container, label, value in metrics:
-        # Tamanho da fonte dos cards de métricas ligeiramente aumentado
         container.markdown(
-            f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:2.2rem;font-weight:800;color:{DARK}'>{value}</div></div>",
+            f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:1.9rem;font-weight:800;color:{DARK}'>{value}</div></div>",
             unsafe_allow_html=True,
         )
-        
     # ---------------- PENDENTES ZONA ----------------
 
     if "Área" in df.columns:
@@ -408,7 +335,7 @@ def main() -> None:
             val = counts.get(z,0)
 
             with cols[i % 5]:
-                # Fontes da zona aumentadas (13px -> 15px, 28px -> 32px)
+
                 st.markdown(f"""
                 <div style="
                 background:white;
@@ -418,11 +345,10 @@ def main() -> None:
                 text-align:center;
                 box-shadow:0px 2px 6px rgba(0,0,0,0.08)
                 ">
-                <div style="font-size:15px;color:#64748b">{z}</div>
-                <div style="font-size:32px;font-weight:bold;color:{DARK}">{val}</div>
+                <div style="font-size:13px;color:#64748b">{z}</div>
+                <div style="font-size:28px;font-weight:bold;color:{DARK}">{val}</div>
                 </div>
                 """, unsafe_allow_html=True)
-                
     st.markdown(
         f"<div class='legend'>Janela horária usada no painel: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>",
         unsafe_allow_html=True,
@@ -441,21 +367,12 @@ def main() -> None:
     st.markdown(f"<div class='section-title'>{desloc_title}</div>", unsafe_allow_html=True)
     render_table(desloc_df)
 
-    # Botão de captura via JS e botão de download do CSV lado a lado
-    col_capture, col_csv = st.columns([1, 1])
-    
-    with col_capture:
-        render_capture_button()
-        
-    with col_csv:
-        st.markdown("<br>", unsafe_allow_html=True) # Espaçamento para alinhar os botões
-        st.download_button(
-            "Baixar base tratada em CSV",
-            data=df.to_csv(index=False).encode("utf-8-sig"),
-            file_name="base_tratada_inventario.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+    st.download_button(
+        "Baixar base tratada em CSV",
+        data=df.to_csv(index=False).encode("utf-8-sig"),
+        file_name="base_tratada_inventario.csv",
+        mime="text/csv",
+    )
 
     with st.expander("Regra aplicada no cálculo", expanded=False):
         st.markdown(
@@ -467,6 +384,7 @@ def main() -> None:
             - As tabelas inferiores agrupam por **Operador**, separando **Verificados** e **Deslocado**.
             """
         )
+
 
 if __name__ == "__main__":
     main()
