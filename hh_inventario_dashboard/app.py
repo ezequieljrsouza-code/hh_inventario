@@ -170,7 +170,6 @@ def parse_hour(value):
     except:
         return pd.NA
 
-
 def format_hour(hour):
     return f"{int(hour):02d}h"
 
@@ -273,9 +272,13 @@ def main():
 
     df = prepare_base_dataframe(uploaded.getvalue(), uploaded.name)
 
-    valid_hours = sorted(df["Hora"].dropna().unique())
+valid_hours = sorted(df["Hora"].dropna().unique())
 
-    base_hour = min(valid_hours)
+if len(valid_hours) == 0:
+    st.error("Não foi possível identificar horas válidas na coluna 'Data de Escaneamento'. Verifique o formato da data.")
+    st.stop()
+
+base_hour = min(valid_hours)
 
     hours = list(range(base_hour, base_hour + 8))
 
