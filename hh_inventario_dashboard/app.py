@@ -20,7 +20,6 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-
         /* ---------- OCULTAR MENU STREAMLIT ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
@@ -32,69 +31,65 @@ def inject_css() -> None:
         [data-testid="stStatusWidget"] {{display:none;}}
 
         /* ---------- LAYOUT ---------- */
-
         .stApp {{ background: {BG}; }}
-        .block-container {{ padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }}
+        .block-container {{ padding-top: 1.5rem; padding-bottom: 2rem; max-width: 95%; }} /* Aumentado para dar mais margem lateral */
 
         .hero {{
             background: linear-gradient(135deg, {ORANGE} 0%, #fb923c 100%);
             color: white;
             padding: 1.25rem 1.5rem;
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,.08);
             margin-bottom: 1rem;
         }}
-
-        .hero h1 {{ margin: 0; font-size: 2.2rem; }}
-        .hero p {{ margin: .35rem 0 0 0; font-size: 1.1rem; opacity: 0.95; }}
 
         .metric-card {{
             background: {WHITE};
             border: 1px solid {BORDER};
             border-radius: 14px;
-            padding: 1.2rem 1.3rem;
-            box-shadow: 0 4px 16px rgba(15,23,42,.05);
+            padding: 1rem;
+            text-align: center;
         }}
 
         .section-title {{
             background: {ORANGE};
             color: white;
-            padding: .8rem 1.2rem;
+            padding: .6rem 1rem;
             border-radius: 12px 12px 0 0;
             font-weight: 700;
-            border: 1px solid {BORDER};
-            border-bottom: 0;
             margin-top: 1rem;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }}
 
+        /* ---------- TABELAS (AJUSTE DE LARGURA) ---------- */
         .table-wrap {{
             background: {WHITE};
             border: 1px solid {BORDER};
             border-radius: 0 0 12px 12px;
-            overflow: hidden;
             margin-bottom: 1rem;
+            overflow-x: auto; /* Adiciona scroll horizontal se necessário */
+            width: 100%;
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.15rem; /* Fonte aumentada */
+            font-size: 1.1rem; /* Fonte equilibrada */
+            table-layout: auto; /* Permite que colunas se ajustem ao conteúdo */
         }}
 
         table.hh-table th {{
             background: {ORANGE};
             color: white;
             border: 1px solid {BORDER};
-            padding: .8rem .7rem;
+            padding: .6rem .4rem; /* Padding reduzido para caber tudo */
             text-align: center;
+            font-size: 1.05rem;
             white-space: nowrap;
-            font-size: 1.2rem; /* Cabeçalho mais visível */
         }}
 
         table.hh-table td {{
             border: 1px solid {BORDER};
-            padding: .7rem;
+            padding: .6rem .4rem;
             text-align: center;
             color: {DARK};
         }}
@@ -103,21 +98,44 @@ def inject_css() -> None:
             text-align: left;
             font-weight: 700;
             background: #fff7ed;
+            min-width: 200px; /* Garante que o nome do operador não quebre */
         }}
 
-        table.hh-table td.total-col {{ font-weight: 900; background: #f1f5f9; }}
-
-        .legend {{ color: #475569; font-size: 1rem; margin-top: -.25rem; margin-bottom: .75rem; }}
-
-        .small-note {{ color: #64748b; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }}
-
-        .stFileUploader > div > div {{ background: {WHITE}; border-radius: 12px; }}
+        table.hh-table td.total-col {{ 
+            font-weight: 800; 
+            background: #f1f5f9; 
+            min-width: 80px;
+        }}
 
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+def render_table(df: pd.DataFrame) -> None:
+    if df.empty:
+        st.info("Sem dados para exibir nesta seção.")
+        return
+    display_df = df.copy()
+    display_df = display_df.fillna("")
+    headers = list(display_df.columns)
+    
+    # Gerando o HTML com classes específicas para a coluna TOTAL
+    html = ["<div class='table-wrap'><table class='hh-table'><thead><tr>"]
+    html.extend([f"<th>{h}</th>" for h in headers])
+    html.append("</tr></thead><tbody>")
+    
+    for _, row in display_df.iterrows():
+        html.append("<tr>")
+        row_list = row.tolist()
+        for idx, value in enumerate(row_list):
+            # Aplica a classe total-col apenas na última coluna
+            cls = "total-col" if idx == len(headers) - 1 else ""
+            html.append(f"<td class='{cls}'>{value}</td>")
+        html.append("</tr>")
+    
+    html.append("</tbody></table></div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
