@@ -1,220 +1,353 @@
+import io
+import re
+from collections import OrderedDict
+
 import pandas as pd
 import streamlit as st
-import plotly.express as px
-from io import BytesIO
+import matplotlib.pyplot as plt
 
-st.set_page_config(
-    page_title="HH Inventário",
-    page_icon="📦",
-    layout="wide"
-)
+st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
 ORANGE = "#f59e0b"
+DARK = "#1f2937"
+BORDER = "#d1d5db"
+BG = "#f8fafc"
+WHITE = "#ffffff"
+
+STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 
 # ---------------- CSS ----------------
 
-st.markdown("""
-<style>
+def inject_css():
 
-.stApp {
-background:#f3f4f6;
-}
+    st.markdown(f"""
+    <style>
 
-.hero {
-background:linear-gradient(135deg,#f59e0b,#fb923c);
-padding:22px;
-border-radius:12px;
-color:white;
-margin-bottom:20px;
-}
+    .stApp {{
+        background:{BG};
+    }}
 
-.card {
-background:white;
-padding:18px;
-border-radius:10px;
-box-shadow:0px 2px 8px rgba(0,0,0,0.08);
-text-align:center;
-}
+    .hero {{
+        background:linear-gradient(135deg,{ORANGE},#fb923c);
+        color:white;
+        padding:1.3rem;
+        border-radius:14px;
+        margin-bottom:1rem;
+    }}
 
-.metric-title {
-font-size:14px;
-color:#64748b;
-}
+    .metric-card {{
+        background:white;
+        border-radius:12px;
+        padding:1rem;
+        text-align:center;
+        border:1px solid {BORDER};
+    }}
 
-.metric-value {
-font-size:30px;
-font-weight:bold;
-color:#1f2937;
-}
+    .section-title {{
+        background:{ORANGE};
+        color:white;
+        padding:.6rem 1rem;
+        border-radius:8px;
+        margin-top:1rem;
+        font-weight:bold;
+    }}
 
-.section {
-background:#f59e0b;
-color:white;
-padding:8px;
-font-weight:bold;
-border-radius:6px;
-margin-top:25px;
-}
+    table.hh-table {{
+        width:100%;
+        border-collapse:collapse;
+        font-size:0.95rem;
+    }}
 
-</style>
-""", unsafe_allow_html=True)
+    table.hh-table th {{
+        background:{ORANGE};
+        color:white;
+        padding:.6rem;
+        border:1px solid {BORDER};
+    }}
 
-# ---------------- HEADER ----------------
+    table.hh-table td {{
+        border:1px solid {BORDER};
+        padding:.5rem;
+        text-align:center;
+    }}
 
-st.markdown("""
-<div class='hero'>
-<h1>HH Inventário</h1>
-Dashboard automático baseado na BASE INICIAL INVENTÁRIO
-</div>
-""", unsafe_allow_html=True)
+    table.hh-table td:first-child {{
+        text-align:left;
+        font-weight:bold;
+        background:#fff7ed;
+    }}
 
-# ---------------- UPLOAD ----------------
+    </style>
+    """, unsafe_allow_html=True)
 
-file = st.file_uploader("Upload BASE INICIAL INVENTÁRIO", type=["xlsx","csv"])
+# ---------------- NORMALIZAÇÃO ----------------
 
-if not file:
-    st.stop()
+def normalize_columns(df):
 
-# ---------------- LEITURA ----------------
+    rename = {}
 
-if file.name.endswith(".csv"):
-    df = pd.read_csv(file)
-else:
-    df = pd.read_excel(file)
+    for c in df.columns:
 
-df.columns = [c.strip() for c in df.columns]
+        low = c.lower()
 
-df["Hora"] = pd.to_datetime(df["Data de Escaneamento"], errors="coerce").dt.hour
+        if "data" in low:
+            rename[c] = "Data de Escaneamento"
 
-# ---------------- MÉTRICAS ----------------
+        if "situa" in low:
+            rename[c] = "Situação"
 
-total = len(df)
-verificados = (df["Situação"]=="Verificados").sum()
-pendentes = (df["Situação"]=="Pendente").sum()
-deslocados = (df["Situação"]=="Deslocado").sum()
+        if "operador" in low:
+            rename[c] = "Operador"
 
-c1,c2,c3,c4 = st.columns(4)
+        if "area" in low or "área" in low:
+            rename[c] = "Área"
 
-with c1:
-    st.markdown(f"<div class='card'><div class='metric-title'>Base</div><div class='metric-value'>{total}</div></div>",unsafe_allow_html=True)
+    df = df.rename(columns=rename)
 
-with c2:
-    st.markdown(f"<div class='card'><div class='metric-title'>Verificados</div><div class='metric-value'>{verificados}</div></div>",unsafe_allow_html=True)
+    return df
 
-with c3:
-    st.markdown(f"<div class='card'><div class='metric-title'>Pendentes</div><div class='metric-value'>{pendentes}</div></div>",unsafe_allow_html=True)
+# ---------------- HORA ----------------
 
-with c4:
-    st.markdown(f"<div class='card'><div class='metric-title'>Deslocados</div><div class='metric-value'>{deslocados}</div></div>",unsafe_allow_html=True)
+def parse_hour(v):
 
-# ---------------- PENDENTES ZONA ----------------
+    try:
 
-st.markdown("<div class='section'>Pendentes Zona</div>", unsafe_allow_html=True)
+        return pd.to_datetime(v).hour
 
-zonas = [
-"Returns","Sorting","Problem Solving","Missort",
-"Fraude","Damaged","Buffered","Dispatch",
-"Containerized","Bulky returns"
-]
+    except:
 
-counts = df["Área"].value_counts().to_dict()
+        return None
 
-cols = st.columns(5)
+# ---------------- HH STATUS ----------------
 
-for i,z in enumerate(zonas):
+def summarize_status(df, hours):
 
-    val = counts.get(z,0)
+    rows = []
 
-    with cols[i%5]:
+    for s in STATUS_ORDER:
 
-        st.markdown(f"""
+        sub = df[df["Situação"] == s]
+
+        r = {"QTD / Status": s}
+
+        for h in hours:
+
+            r[f"{h}h"] = (sub["Hora"] == h).sum()
+
+        r["TOTAL"] = len(sub)
+
+        rows.append(r)
+
+    return pd.DataFrame(rows)
+
+# ---------------- OPERADORES ----------------
+
+def summarize_operator(df, status, hours):
+
+    sub = df[df["Situação"] == status]
+
+    ops = sub["Operador"].dropna().unique()
+
+    rows = []
+
+    for o in ops:
+
+        op = sub[sub["Operador"] == o]
+
+        r = {"Operador": o}
+
+        for h in hours:
+
+            r[f"{h}h"] = (op["Hora"] == h).sum()
+
+        r["TOTAL"] = len(op)
+
+        rows.append(r)
+
+    return pd.DataFrame(rows)
+
+# ---------------- TABELA HTML ----------------
+
+def render_table(df):
+
+    html = "<table class='hh-table'>"
+
+    html += "<tr>"
+
+    for c in df.columns:
+
+        html += f"<th>{c}</th>"
+
+    html += "</tr>"
+
+    for _, r in df.iterrows():
+
+        html += "<tr>"
+
+        for v in r:
+
+            html += f"<td>{v}</td>"
+
+        html += "</tr>"
+
+    html += "</table>"
+
+    st.markdown(html, unsafe_allow_html=True)
+
+# ---------------- ZONA CARDS ----------------
+
+def render_zona_cards(df):
+
+    zonas = [
+        "Returns","Sorting","Problem Solving","Missort",
+        "Fraude","Damaged","Buffered","Dispatch",
+        "Containerized","Bulky returns"
+    ]
+
+    counts = df["Área"].value_counts().to_dict()
+
+    st.markdown("<div class='section-title'>Pendentes Zona</div>", unsafe_allow_html=True)
+
+    cols = st.columns(5)
+
+    for i,z in enumerate(zonas):
+
+        v = counts.get(z,0)
+
+        cols[i % 5].markdown(f"""
         <div style="
         background:white;
-        border-left:6px solid #f59e0b;
+        border-left:6px solid {ORANGE};
         padding:15px;
         border-radius:8px;
         text-align:center;
-        box-shadow:0px 2px 6px rgba(0,0,0,0.08)
-        ">
+        box-shadow:0px 2px 6px rgba(0,0,0,0.08)">
         <div style="font-size:13px;color:#64748b">{z}</div>
-        <div style="font-size:26px;font-weight:bold;color:#1f2937">{val}</div>
+        <div style="font-size:28px;font-weight:bold">{v}</div>
         </div>
         """, unsafe_allow_html=True)
 
-# ---------------- PRODUTIVIDADE POR HORA ----------------
+# ---------------- EXPORTAR IMAGEM ----------------
 
-st.markdown("<div class='section'>Produtividade por Hora</div>", unsafe_allow_html=True)
+def export_dashboard_image(df):
 
-prod = df.groupby("Hora").size().reset_index(name="Pacotes")
+    fig, ax = plt.subplots(figsize=(12,3))
 
-fig = px.bar(
-    prod,
-    x="Hora",
-    y="Pacotes",
-    color_discrete_sequence=[ORANGE]
-)
+    ax.axis('off')
 
-fig.update_layout(
-    height=400,
-    plot_bgcolor="white",
-    paper_bgcolor="white",
-    font_color="#1f2937",
-    xaxis_title="Hora",
-    yaxis_title="Pacotes Processados"
-)
+    table = ax.table(
+        cellText=df.values,
+        colLabels=df.columns,
+        loc='center'
+    )
 
-st.plotly_chart(fig, use_container_width=True)
+    table.auto_set_font_size(False)
 
-# ---------------- HH INVENTÁRIO ----------------
+    table.set_fontsize(10)
 
-st.markdown("<div class='section'>HH Inventário</div>", unsafe_allow_html=True)
+    buf = io.BytesIO()
 
-hh = df.groupby(["Situação","Hora"]).size().unstack(fill_value=0)
+    plt.savefig(buf, format="png", bbox_inches="tight")
 
-hh["Total"] = hh.sum(axis=1)
+    buf.seek(0)
 
-st.dataframe(hh,use_container_width=True)
+    st.download_button(
+        "📸 Baixar imagem para WhatsApp",
+        data=buf,
+        file_name="hh_inventario.png",
+        mime="image/png"
+    )
 
-# ---------------- RANKING OPERADORES ----------------
+# ---------------- MAIN ----------------
 
-st.markdown("<div class='section'>Ranking de Operadores</div>", unsafe_allow_html=True)
+def main():
 
-ranking = (
-    df.groupby("Operador")
-    .size()
-    .sort_values(ascending=False)
-    .reset_index(name="Pacotes")
-)
+    inject_css()
 
-st.dataframe(ranking,use_container_width=True)
+    st.markdown("""
+    <div class='hero'>
+    <h1>HH Inventário</h1>
+    Dashboard automático baseado na BASE INICIAL INVENTÁRIO
+    </div>
+    """, unsafe_allow_html=True)
 
-fig2 = px.bar(
-    ranking.head(10),
-    x="Operador",
-    y="Pacotes",
-    color_discrete_sequence=[ORANGE]
-)
+    file = st.file_uploader("Upload BASE INICIAL INVENTÁRIO", type=["xlsx","csv"])
 
-fig2.update_layout(
-    plot_bgcolor="white",
-    paper_bgcolor="white",
-    font_color="#1f2937"
-)
+    if not file:
+        st.stop()
 
-st.plotly_chart(fig2, use_container_width=True)
+    if file.name.endswith("csv"):
 
-# ---------------- EXPORTAÇÃO ----------------
+        df = pd.read_csv(file)
 
-st.markdown("<div class='section'>Exportar Dados</div>", unsafe_allow_html=True)
+    else:
 
-buffer = BytesIO()
+        df = pd.read_excel(file)
 
-with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-    hh.to_excel(writer, sheet_name="HH Inventario")
-    ranking.to_excel(writer, sheet_name="Ranking")
+    df = normalize_columns(df)
 
-st.download_button(
-    label="📥 Baixar Relatório Excel",
-    data=buffer.getvalue(),
-    file_name="hh_inventario_relatorio.xlsx"
-)
+    df["Hora"] = df["Data de Escaneamento"].apply(parse_hour)
+
+    # ---------------- MÉTRICAS ----------------
+
+    total = len(df)
+
+    ver = (df["Situação"] == "Verificados").sum()
+
+    pen = (df["Situação"] == "Pendente").sum()
+
+    des = (df["Situação"] == "Deslocado").sum()
+
+    c1,c2,c3,c4 = st.columns(4)
+
+    c1.metric("Base", total)
+
+    c2.metric("Verificados", ver)
+
+    c3.metric("Pendentes", pen)
+
+    c4.metric("Deslocados", des)
+
+    # ---------------- ZONAS ----------------
+
+    render_zona_cards(df)
+
+    # ---------------- HH STATUS ----------------
+
+    st.markdown("<div class='section-title'>HH Inventário</div>", unsafe_allow_html=True)
+
+    base_hour = int(df["Hora"].min())
+
+    hours = list(range(base_hour, base_hour + 8))
+
+    status_df = summarize_status(df, hours)
+
+    render_table(status_df)
+
+    export_dashboard_image(status_df)
+
+    # ---------------- OPERADORES ----------------
+
+    st.markdown("<div class='section-title'>Verificados / Conferentes</div>", unsafe_allow_html=True)
+
+    ver_df = summarize_operator(df,"Verificados",hours)
+
+    render_table(ver_df)
+
+    st.markdown("<div class='section-title'>Deslocados / Conferentes</div>", unsafe_allow_html=True)
+
+    des_df = summarize_operator(df,"Deslocado",hours)
+
+    render_table(des_df)
+
+    # ---------------- EXPORTAR BASE ----------------
+
+    st.download_button(
+        "Baixar base tratada",
+        data=df.to_csv(index=False).encode("utf-8"),
+        file_name="base_tratada.csv"
+    )
+
+if __name__ == "__main__":
+
+    main()
