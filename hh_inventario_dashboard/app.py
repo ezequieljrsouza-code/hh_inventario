@@ -191,10 +191,31 @@ if "Data de Escaneamento" not in df.columns:
     st.error("Coluna 'Data de Escaneamento' não encontrada.")
     st.stop()
 
-df["Hora"] = pd.to_datetime(df["Data de Escaneamento"], errors="coerce").dt.hour
+import re
+
+def extrair_hora(valor):
+
+    if pd.isna(valor):
+        return None
+
+    texto = str(valor)
+
+    # procura padrão HH:MM
+    match = re.search(r'(\d{1,2}):(\d{2})', texto)
+
+    if match:
+        return int(match.group(1))
+
+    try:
+        return pd.to_datetime(texto).hour
+    except:
+        return None
+
+
+df["Hora"] = df["Data de Escaneamento"].apply(extrair_hora)
 
 if df["Hora"].dropna().empty:
-    st.error("Não foi possível identificar horas válidas na coluna 'Data de Escaneamento'.")
+    st.error("Não foi possível identificar horas válidas na coluna 'Data de Escaneamento'. Verifique o formato da coluna.")
     st.stop()
 
 # ---------- MÉTRICAS ----------
