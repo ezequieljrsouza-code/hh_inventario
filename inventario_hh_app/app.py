@@ -13,47 +13,48 @@ ORANGE = "#f59e0b"
 
 # ---------------- CSS ----------------
 
-st.markdown(f"""
+st.markdown("""
 <style>
 
-.stApp {{
+.stApp {
 background:#f3f4f6;
-}}
+}
 
-.hero {{
-background:linear-gradient(135deg,{ORANGE},#fb923c);
-padding:20px;
+.hero {
+background:linear-gradient(135deg,#f59e0b,#fb923c);
+padding:22px;
 border-radius:12px;
 color:white;
 margin-bottom:20px;
-}}
+}
 
-.card {{
+.card {
 background:white;
-padding:15px;
+padding:18px;
 border-radius:10px;
-box-shadow:0px 3px 10px rgba(0,0,0,0.08);
+box-shadow:0px 2px 8px rgba(0,0,0,0.08);
 text-align:center;
-}}
+}
 
-.metric-title {{
+.metric-title {
 font-size:14px;
 color:#64748b;
-}}
+}
 
-.metric-value {{
+.metric-value {
 font-size:30px;
 font-weight:bold;
-}}
+color:#1f2937;
+}
 
-.section {{
-background:{ORANGE};
+.section {
+background:#f59e0b;
 color:white;
 padding:8px;
 font-weight:bold;
 border-radius:6px;
-margin-top:20px;
-}}
+margin-top:25px;
+}
 
 </style>
 """, unsafe_allow_html=True)
@@ -81,13 +82,7 @@ if file.name.endswith(".csv"):
 else:
     df = pd.read_excel(file)
 
-# normalização de colunas
-
 df.columns = [c.strip() for c in df.columns]
-
-if "Data de Escaneamento" not in df.columns:
-    st.error("Coluna 'Data de Escaneamento' não encontrada")
-    st.stop()
 
 df["Hora"] = pd.to_datetime(df["Data de Escaneamento"], errors="coerce").dt.hour
 
@@ -132,10 +127,19 @@ for i,z in enumerate(zonas):
 
     with cols[i%5]:
 
-        st.markdown(
-        f"<div class='card'><div class='metric-title'>{z}</div><div class='metric-value'>{val}</div></div>",
-        unsafe_allow_html=True
-        )
+        st.markdown(f"""
+        <div style="
+        background:white;
+        border-left:6px solid #f59e0b;
+        padding:15px;
+        border-radius:8px;
+        text-align:center;
+        box-shadow:0px 2px 6px rgba(0,0,0,0.08)
+        ">
+        <div style="font-size:13px;color:#64748b">{z}</div>
+        <div style="font-size:26px;font-weight:bold;color:#1f2937">{val}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ---------------- PRODUTIVIDADE POR HORA ----------------
 
@@ -152,6 +156,9 @@ fig = px.bar(
 
 fig.update_layout(
     height=400,
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+    font_color="#1f2937",
     xaxis_title="Hora",
     yaxis_title="Pacotes Processados"
 )
@@ -186,6 +193,12 @@ fig2 = px.bar(
     x="Operador",
     y="Pacotes",
     color_discrete_sequence=[ORANGE]
+)
+
+fig2.update_layout(
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+    font_color="#1f2937"
 )
 
 st.plotly_chart(fig2, use_container_width=True)
