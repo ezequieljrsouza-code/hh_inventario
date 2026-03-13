@@ -45,26 +45,27 @@ def inject_css() -> None:
             margin-bottom: 1rem;
         }}
 
-        .hero h1 {{ margin: 0; font-size: 2rem; }}
-        .hero p {{ margin: .35rem 0 0 0; font-size: 1rem; opacity: 0.95; }}
+        .hero h1 {{ margin: 0; font-size: 2.2rem; }}
+        .hero p {{ margin: .35rem 0 0 0; font-size: 1.1rem; opacity: 0.95; }}
 
         .metric-card {{
             background: {WHITE};
             border: 1px solid {BORDER};
             border-radius: 14px;
-            padding: 1rem 1.15rem;
+            padding: 1.2rem 1.3rem;
             box-shadow: 0 4px 16px rgba(15,23,42,.05);
         }}
 
         .section-title {{
             background: {ORANGE};
             color: white;
-            padding: .65rem 1rem;
+            padding: .8rem 1.2rem;
             border-radius: 12px 12px 0 0;
             font-weight: 700;
             border: 1px solid {BORDER};
             border-bottom: 0;
-            margin-top: .5rem;
+            margin-top: 1rem;
+            font-size: 1.3rem;
         }}
 
         .table-wrap {{
@@ -78,21 +79,22 @@ def inject_css() -> None:
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.95rem;
+            font-size: 1.15rem; /* Fonte aumentada */
         }}
 
         table.hh-table th {{
             background: {ORANGE};
             color: white;
             border: 1px solid {BORDER};
-            padding: .6rem .55rem;
+            padding: .8rem .7rem;
             text-align: center;
             white-space: nowrap;
+            font-size: 1.2rem; /* Cabeçalho mais visível */
         }}
 
         table.hh-table td {{
             border: 1px solid {BORDER};
-            padding: .55rem;
+            padding: .7rem;
             text-align: center;
             color: {DARK};
         }}
@@ -103,11 +105,11 @@ def inject_css() -> None:
             background: #fff7ed;
         }}
 
-        table.hh-table td.total-col {{ font-weight: 700; }}
+        table.hh-table td.total-col {{ font-weight: 900; background: #f1f5f9; }}
 
-        .legend {{ color: #475569; font-size: .92rem; margin-top: -.25rem; margin-bottom: .75rem; }}
+        .legend {{ color: #475569; font-size: 1rem; margin-top: -.25rem; margin-bottom: .75rem; }}
 
-        .small-note {{ color: #64748b; font-size: .82rem; }}
+        .small-note {{ color: #64748b; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }}
 
         .stFileUploader > div > div {{ background: {WHITE}; border-radius: 12px; }}
 
@@ -154,7 +156,7 @@ def parse_hour(value) -> float:
         return pd.NA
     time_part = text.split("|")[0].strip()
     time_part = time_part.replace(".", ":")
-    match = re.search(r"(\d{{1,2}}:\d{{2}}\s*[ap]m)", time_part, flags=re.I)
+    match = re.search(r"(\d{1,2}:\d{2}\s*[ap]m)", time_part, flags=re.I)
     if match:
         time_part = match.group(1)
     for fmt in ("%I:%M%p", "%I:%M %p", "%H:%M"):
@@ -251,7 +253,7 @@ def main() -> None:
         """
         <div class="hero">
             <h1>HH Inventário</h1>
-            <p>Faça upload de um arquivo base e o painel é montado automaticamente com o mesmo racional da guia HH INVENTÁRIO.</p>
+            <p>Painel de acompanhamento automático.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -260,23 +262,7 @@ def main() -> None:
     uploaded = st.file_uploader(
         "Upload da base (.xlsx ou .csv)",
         type=["xlsx", "xls", "csv"],
-        help="Preferencialmente um arquivo com a estrutura da guia BASE INICIAL INVENTÁRIO.",
     )
-
-    with st.expander("Estrutura esperada do arquivo", expanded=not bool(uploaded)):
-        st.markdown(
-            """
-            A aplicação espera, no mínimo, estas colunas:
-            - **Data de Escaneamento**
-            - **Situação**
-
-            E também aproveita, quando existirem:
-            - **Operador**
-            - **Área**
-            - **Comentário**
-            - **Pacote**
-            """
-        )
 
     if not uploaded:
         st.stop()
@@ -290,7 +276,7 @@ def main() -> None:
 
     valid_hours = sorted([int(h) for h in df["Hora"].dropna().unique().tolist()])
     if not valid_hours:
-        st.error("Não foi possível identificar nenhuma hora válida na coluna 'Data de Escaneamento'.")
+        st.error("Não foi possível identificar nenhuma hora válida.")
         st.stop()
 
     base_hour = min(valid_hours)
@@ -311,46 +297,28 @@ def main() -> None:
     ]
     for container, label, value in metrics:
         container.markdown(
-            f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:1.9rem;font-weight:800;color:{DARK}'>{value}</div></div>",
+            f"<div class='metric-card'><div class='small-note'>{label}</div><div style='font-size:2.3rem;font-weight:800;color:{DARK}'>{value}</div></div>",
             unsafe_allow_html=True,
         )
+
     # ---------------- PENDENTES ZONA ----------------
-
     if "Área" in df.columns:
-
         st.markdown("<div class='section-title'>Pendentes Zona</div>", unsafe_allow_html=True)
-
-        zonas = [
-            "Returns","Sorting","Problem Solving","Missort",
-            "Fraude","Damaged","Buffered","Dispatch",
-            "Containerized","Bulky returns"
-        ]
-
+        zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
-
         cols = st.columns(5)
-
         for i,z in enumerate(zonas):
-
             val = counts.get(z,0)
-
             with cols[i % 5]:
-
                 st.markdown(f"""
-                <div style="
-                background:white;
-                border-left:6px solid {ORANGE};
-                padding:15px;
-                border-radius:10px;
-                text-align:center;
-                box-shadow:0px 2px 6px rgba(0,0,0,0.08)
-                ">
-                <div style="font-size:13px;color:#64748b">{z}</div>
-                <div style="font-size:28px;font-weight:bold;color:{DARK}">{val}</div>
+                <div style="background:white; border-left:6px solid {ORANGE}; padding:15px; border-radius:10px; text-align:center; box-shadow:0px 2px 6px rgba(0,0,0,0.08); margin-bottom:10px;">
+                    <div style="font-size:15px; color:#64748b; font-weight:600;">{z}</div>
+                    <div style="font-size:32px; font-weight:bold; color:{DARK}">{val}</div>
                 </div>
                 """, unsafe_allow_html=True)
+
     st.markdown(
-        f"<div class='legend'>Janela horária usada no painel: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>",
+        f"<div class='legend'>Janela horária: <strong>{format_hour(hours[0])}</strong> até <strong>{format_hour(hours[-1])}</strong>.</div>",
         unsafe_allow_html=True,
     )
 
@@ -358,7 +326,7 @@ def main() -> None:
     verif_title, verif_df = summarize_by_operator(df, "Verificados", "Verificados / Conferentes", hours, hour_labels)
     desloc_title, desloc_df = summarize_by_operator(df, "Deslocado", "Deslocados / Conferentes", hours, hour_labels)
 
-    st.markdown("<div class='section-title'>HH Inventário</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Resumo HH</div>", unsafe_allow_html=True)
     render_table(status_df)
 
     st.markdown(f"<div class='section-title'>{verif_title}</div>", unsafe_allow_html=True)
@@ -372,19 +340,8 @@ def main() -> None:
         data=df.to_csv(index=False).encode("utf-8-sig"),
         file_name="base_tratada_inventario.csv",
         mime="text/csv",
+        use_container_width=True
     )
-
-    with st.expander("Regra aplicada no cálculo", expanded=False):
-        st.markdown(
-            """
-            - A coluna **Data de Escaneamento** é convertida para hora.
-            - O painel usa a primeira hora encontrada na base como ponto de partida.
-            - São exibidas **8 colunas horárias sequenciais**, no mesmo espírito da guia HH INVENTÁRIO.
-            - A tabela principal agrupa por **Situação**.
-            - As tabelas inferiores agrupam por **Operador**, separando **Verificados** e **Deslocado**.
-            """
-        )
-
 
 if __name__ == "__main__":
     main()
