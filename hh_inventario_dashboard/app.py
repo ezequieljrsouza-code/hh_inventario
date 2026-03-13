@@ -136,12 +136,11 @@ def render_capture_button():
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <style>
         .btn-capture {
-            background-color: #10b981; /* Verde no estilo WhatsApp */
+            background-color: #10b981;
             color: white;
             border: none;
             padding: 14px 24px;
             text-align: center;
-            text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -155,9 +154,7 @@ def render_capture_button():
             font-family: sans-serif;
             margin-top: 10px;
         }
-        .btn-capture:hover {
-            background-color: #059669;
-        }
+        .btn-capture:hover { background-color: #059669; }
         </style>
         <button class="btn-capture" onclick="capture()">
             📸 Capturar Painel como Imagem (WhatsApp)
@@ -168,14 +165,23 @@ def render_capture_button():
             var originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Gerando imagem...';
             
-            // Procura o container principal do Streamlit no documento pai (já que roda num iframe)
             var target = window.parent.document.querySelector('.block-container');
             
             if(target) {
                 html2canvas(target, {
-                    scale: 2, // Garante alta resolução
+                    scale: 2,
                     useCORS: true,
-                    backgroundColor: '#f8fafc' // Cor de fundo da aplicação
+                    backgroundColor: '#f8fafc',
+                    logging: false,
+                    letterRendering: true, // Melhora a renderização de letras individuais
+                    onclone: (clonedDoc) => {
+                        // Força todos os elementos no clone a terem espaçamento de palavra normal
+                        const all = clonedDoc.querySelectorAll('*');
+                        all.forEach(el => {
+                            el.style.wordSpacing = 'normal';
+                            el.style.letterSpacing = 'normal';
+                        });
+                    }
                 }).then(canvas => {
                     var link = document.createElement('a');
                     link.download = 'painel_inventario.png';
@@ -295,7 +301,12 @@ def summarize_by_operator(df: pd.DataFrame, status: str, title_prefix: str, hour
     for operator in operators:
         op_subset = subset[subset["Operador"] == operator]
         row = OrderedDict()
-        row[title_prefix] = operator
+        
+        # CORREÇÃO AQUI: Substitui espaços normais por espaços não quebráveis (HTML entity)
+        # Isso impede que o html2canvas una as palavras.
+        operator_safe = str(operator).replace(" ", "&nbsp;")
+        row[title_prefix] = operator_safe
+        
         for hour, label in zip(hours, hour_labels):
             row[label] = int((op_subset["Hora"] == hour).sum())
         row["TOTAL"] = int(len(op_subset))
