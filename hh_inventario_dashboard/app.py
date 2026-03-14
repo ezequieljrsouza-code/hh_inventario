@@ -5,8 +5,13 @@ from collections import OrderedDict
 import pandas as pd
 import streamlit as st
 
-# Configuração da página
-st.set_page_config(page_title="HH Inventário - Dark", page_icon="📦", layout="wide")
+# Configuração da página - FORÇANDO A BARRA LATERAL ABERTA
+st.set_page_config(
+    page_title="HH Inventário - Dark", 
+    page_icon="📦", 
+    layout="wide",
+    initial_sidebar_state="expanded"  # Isso força o menu a iniciar aberto
+)
 
 # Paleta Dark Premium
 ORANGE = "#f59e0b"
@@ -28,6 +33,7 @@ def inject_css() -> None:
         header {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
+        [data-testid="stDecoration"] {{display:none;}}
         
         .stApp {{ background: {BG_BLACK}; }}
         .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
@@ -68,7 +74,7 @@ def inject_css() -> None:
             text-align: center;
             margin-bottom: 15px;
             border: 1px solid {BORDER_DARK};
-            border-left: 8px solid {ORANGE} !important; /* Accent Border Reintegrada */
+            border-left: 8px solid {ORANGE} !important;
         }}
         .zone-label {{ font-size: 0.85rem; color: {TEXT_GRAY}; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }}
         .zone-value {{ font-size: 2rem; font-weight: 900; color: {TEXT_WHITE}; }}
@@ -99,8 +105,18 @@ def inject_css() -> None:
         .total-cell {{ background: #262626 !important; font-weight: 900 !important; color: {ORANGE} !important; }}
 
         /* Sidebar Dark */
-        [data-testid="stSidebar"] {{ background-color: #0a0a0a; border-right: 1px solid {BORDER_DARK}; }}
-        .stMarkdown {{ color: {TEXT_WHITE}; }}
+        [data-testid="stSidebar"] {{ background-color: #0a0a0a; border-right: 1px solid {BORDER_DARK}; min-width: 300px !important; }}
+        
+        /* Botão de Instrução Central */
+        .instruction-box {{
+            background: #1e1e1e;
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px dashed {ORANGE};
+            text-align: center;
+            margin: 50px auto;
+            max-width: 600px;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -151,17 +167,29 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
+    # BARRA LATERAL (UPLOAD)
     with st.sidebar:
-        st.markdown(f"<h2 style='color:{ORANGE};'>⚙️ Painel Dark</h2>", unsafe_allow_html=True)
-        st.caption("Ezequiel Miranda - Edição Black")
-        uploaded = st.file_uploader("Upload da Base", type=["xlsx", "csv"])
-    
+        st.markdown(f"<h1 style='color:{ORANGE};'>📁 CARREGAR</h1>", unsafe_allow_html=True)
+        uploaded = st.file_uploader("Arraste seu XLSX ou CSV aqui", type=["xlsx", "csv"])
+        st.markdown("---")
+        st.markdown(f"**Usuário:** {st.session_state.get('user', 'Ezequiel Miranda')}")
+
     if not uploaded:
         st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.info("👈 **Fundo Black Ativado.** Por favor, insira a base de dados na lateral.")
+        
+        # AVISO CASO A SIDEBAR NÃO APAREÇA
+        st.markdown(f"""
+        <div class="instruction-box">
+            <h2 style="color:{ORANGE};">⚠️ ONDE ESTÁ O UPLOAD?</h2>
+            <p style="color:white; font-size:1.2rem;">
+                Clique na <b>setinha ( > )</b> no canto superior esquerdo da tela para abrir o painel de upload lateral.
+            </p>
+            <div style="font-size: 4rem;">⬅️</div>
+        </div>
+        """, unsafe_allow_html=True)
         st.stop()
 
-    # Processamento
+    # --- PROCESSAMENTO E RESTO DO CÓDIGO (IGUAL AO ANTERIOR) ---
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
@@ -184,7 +212,7 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # Zonas com Borda Laranja
+    # Zonas com Borda Laranja de 8px
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -196,7 +224,7 @@ def main():
             with cols[i % 5]:
                 st.markdown(f"""<div class="zone-card"><div class="zone-label">{z}</div><div class="zone-value">{val}</div></div>""", unsafe_allow_html=True)
 
-    # Tabelas
+    # Tabela Resumo
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
