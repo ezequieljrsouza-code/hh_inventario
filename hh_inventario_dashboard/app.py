@@ -22,7 +22,7 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- TRECHO ADICIONADO ---------- */
+        /* ---------- TRECHO DE OCULTAR ELEMENTOS ---------- */
         header {{visibility: hidden;}}
         [data-testid="stToolbar"] {{display: none;}}
         [data-testid="stDecoration"] {{display: none;}}
@@ -155,6 +155,27 @@ def inject_css() -> None:
             font-weight: 900 !important;
             color: {ORANGE} !important;
         }}
+
+        /* Estilo do Botão de Print */
+        .print-btn-container {{
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }}
+        .print-btn {{
+            background-color: {ORANGE};
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -214,6 +235,9 @@ def main():
     if not uploaded:
         st.info("Por favor, faça o upload da base de dados acima para iniciar.")
         st.stop()
+
+    # Início do Container que será capturado pelo Print
+    st.markdown('<div id="capture-area">', unsafe_allow_html=True)
 
     # Processamento
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
@@ -279,6 +303,35 @@ def main():
             op_rows.append(r)
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
+
+    # Fim do Container de captura
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Script para o Botão de Print/Download da Imagem
+    st.markdown("""
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <div class="print-btn-container">
+            <button class="print-btn" onclick="takeScreenshot()">
+                📸 Salvar Imagem
+            </button>
+        </div>
+        <script>
+        function takeScreenshot() {
+            const area = document.querySelector("#capture-area");
+            html2canvas(area, {
+                backgroundColor: "#f1f5f9",
+                scale: 2, // Aumenta a qualidade da imagem
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'HH_Inventario_Dashboard.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+        </script>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
