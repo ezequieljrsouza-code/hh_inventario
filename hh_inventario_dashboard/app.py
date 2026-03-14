@@ -22,7 +22,7 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- TRECHO DE OCULTAR ELEMENTOS ---------- */
+        /* ---------- OCULTAR ELEMENTOS INTERFACE ---------- */
         header {{visibility: hidden;}}
         [data-testid="stToolbar"] {{display: none;}}
         [data-testid="stDecoration"] {{display: none;}}
@@ -156,11 +156,11 @@ def inject_css() -> None:
             color: {ORANGE} !important;
         }}
 
-        /* Estilo do Botão de Print */
+        /* ---------- ESTILO DO BOTÃO DE PRINT (LADO ESQUERDO) ---------- */
         .print-btn-container {{
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 20px;
             z-index: 1000;
         }}
         .print-btn {{
@@ -175,6 +175,10 @@ def inject_css() -> None:
             display: flex;
             align-items: center;
             gap: 8px;
+            font-family: sans-serif;
+        }}
+        .print-btn:hover {{
+            background-color: #d97706;
         }}
         </style>
         """,
@@ -236,7 +240,7 @@ def main():
         st.info("Por favor, faça o upload da base de dados acima para iniciar.")
         st.stop()
 
-    # Início do Container que será capturado pelo Print
+    # Início da Área de Captura
     st.markdown('<div id="capture-area">', unsafe_allow_html=True)
 
     # Processamento
@@ -304,28 +308,27 @@ def main():
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
 
-    # Fim do Container de captura
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Script para o Botão de Print/Download da Imagem
+    # --- SCRIPT PARA SALVAR COMO PNG (BOTÃO À ESQUERDA) ---
     st.markdown("""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <div class="print-btn-container">
-            <button class="print-btn" onclick="takeScreenshot()">
-                📸 Salvar Imagem
+            <button class="print-btn" onclick="saveDashboard()">
+                📸 Salvar PNG
             </button>
         </div>
         <script>
-        function takeScreenshot() {
+        function saveDashboard() {
             const area = document.querySelector("#capture-area");
             html2canvas(area, {
                 backgroundColor: "#f1f5f9",
-                scale: 2, // Aumenta a qualidade da imagem
+                scale: 2,
                 logging: false,
                 useCORS: true
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'HH_Inventario_Dashboard.png';
+                link.download = 'HH_Inventario_' + new Date().toLocaleDateString() + '.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });
