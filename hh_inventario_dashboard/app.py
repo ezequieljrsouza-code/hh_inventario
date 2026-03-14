@@ -233,6 +233,9 @@ def main():
     v_verif = int((df['Situação'] == 'Verificados').sum())
     v_pend = int((df['Situação'] == 'Pendente').sum())
     v_desl = int((df['Situação'] == 'Deslocado').sum())
+    
+    # Cálculo da Acuracidade
+    v_acu = (v_verif / v_total * 100) if v_total > 0 else 0.0
 
     st.markdown(f"""
     <div class="metric-row">
@@ -240,6 +243,7 @@ def main():
         <div class="modern-card"><div class="card-accent" style="background:#22c55e"></div><div class="m-label">Verificados</div><div class="m-value">{v_verif:,}</div></div>
         <div class="modern-card"><div class="card-accent" style="background:#ef4444"></div><div class="m-label">Pendentes</div><div class="m-value">{v_pend:,}</div></div>
         <div class="modern-card"><div class="card-accent" style="background:#3b82f6"></div><div class="m-label">Deslocados</div><div class="m-value">{v_desl:,}</div></div>
+        <div class="modern-card"><div class="card-accent" style="background:#8b5cf6"></div><div class="m-label">Acuracidade</div><div class="m-value">{v_acu:.1f}%</div></div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
