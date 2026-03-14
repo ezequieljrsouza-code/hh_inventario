@@ -6,15 +6,15 @@ import pandas as pd
 import streamlit as st
 
 # Configuração da página
-st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
+st.set_page_config(page_title="HH Inventário - Dark", page_icon="📦", layout="wide")
 
-# Paleta de Cores Premium
+# Paleta Dark Premium
 ORANGE = "#f59e0b"
-DARK_TEXT = "#0f172a"
-METRIC_LABEL = "#475569"
-BORDER = "#e2e8f0"
-BG_APP = "#f1f5f9"
-WHITE = "#ffffff"
+BG_BLACK = "#000000"
+CARD_BG = "#1e1e1e"
+TEXT_WHITE = "#ffffff"
+TEXT_GRAY = "#a1a1aa"
+BORDER_DARK = "#334155"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 
@@ -22,101 +22,58 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- LIMPEZA E BASE ---------- */
+        /* ---------- TEMA DARK TOTAL ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
-        [data-testid="stDecoration"] {{display:none;}}
         
-        .stApp {{ background: {BG_APP}; }}
+        .stApp {{ background: {BG_BLACK}; }}
         .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
 
-        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
-        .main-header {{
-            text-align: center;
-            padding: 20px 0 40px 0;
-        }}
+        /* Título com Gradiente */
+        .main-header {{ text-align: center; padding: 20px 0 40px 0; }}
         .main-header h1 {{
             font-size: 3.5rem;
             font-weight: 900;
-            color: {DARK_TEXT};
+            color: {TEXT_WHITE};
             margin: 0;
-            letter-spacing: -2px;
-            background: linear-gradient(135deg, {DARK_TEXT} 0%, #334155 100%);
+            background: linear-gradient(135deg, {TEXT_WHITE} 0%, {ORANGE} 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }}
 
-        /* ---------- CONTAINER DE CARDS PRINCIPAIS ---------- */
-        .metric-row {{
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 40px;
-        }}
-
+        /* ---------- CARDS PRINCIPAIS ---------- */
+        .metric-row {{ display: flex; justify-content: space-between; gap: 20px; margin-bottom: 40px; }}
         .modern-card {{
-            background: {WHITE};
+            background: {CARD_BG};
             flex: 1;
             padding: 25px 20px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            border: 1px solid {BORDER_DARK};
             position: relative;
             overflow: hidden;
         }}
+        .card-accent {{ position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: {ORANGE}; }}
+        .m-label {{ color: {TEXT_GRAY}; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }}
+        .m-value {{ color: {TEXT_WHITE}; font-size: 3.2rem; font-weight: 900; line-height: 1; }}
 
-        .card-accent {{
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 5px;
-            background: {ORANGE};
-        }}
-
-        .m-label {{
-            color: {METRIC_LABEL};
-            font-size: 0.95rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-        }}
-
-        .m-value {{
-            color: {DARK_TEXT};
-            font-size: 3.2rem;
-            font-weight: 900;
-            line-height: 1;
-        }}
-
-        /* ---------- CARDS DE ZONA (BORDA LATERAL REINTEGRADA) ---------- */
+        /* ---------- CARDS DE ZONA (MODO DARK + BORDA LARANJA) ---------- */
         .zone-card {{
-            background: {WHITE};
+            background: {CARD_BG};
             padding: 22px 15px;
             border-radius: 12px;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             margin-bottom: 15px;
-            border: 1px solid #f1f5f9;
-            border-left: 8px solid {ORANGE} !important; /* Estilo Accent Border */
+            border: 1px solid {BORDER_DARK};
+            border-left: 8px solid {ORANGE} !important; /* Accent Border Reintegrada */
         }}
+        .zone-label {{ font-size: 0.85rem; color: {TEXT_GRAY}; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }}
+        .zone-value {{ font-size: 2rem; font-weight: 900; color: {TEXT_WHITE}; }}
 
-        .zone-label {{
-            font-size: 0.85rem;
-            color: {METRIC_LABEL};
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }}
-
-        .zone-value {{
-            font-size: 2rem;
-            font-weight: 900;
-            color: {DARK_TEXT};
-        }}
-
-        /* ---------- SEÇÕES E TABELAS ---------- */
+        /* ---------- SEÇÕES E TABELAS DARK ---------- */
         .section-header {{
             background: {ORANGE};
             color: white;
@@ -126,55 +83,24 @@ def inject_css() -> None:
             font-size: 1.4rem;
             margin-top: 20px;
         }}
-
         .table-container {{
-            background: {WHITE};
+            background: {CARD_BG};
             border-radius: 0 0 15px 15px;
             padding: 5px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border: 1px solid {BORDER_DARK};
             overflow: hidden;
         }}
+        table.hh-table {{ width: 100%; border-collapse: collapse; font-size: 1.25rem; color: {TEXT_WHITE}; }}
+        table.hh-table th {{ background: #262626; color: {ORANGE}; padding: 15px; font-weight: 800; border-bottom: 1px solid {BORDER_DARK}; }}
+        table.hh-table td {{ padding: 15px; text-align: center; border-bottom: 1px solid {BORDER_DARK}; }}
+        table.hh-table td:first-child {{ text-align: left; font-weight: 800; background: #1a1a1a; color: {TEXT_WHITE}; }}
+        
+        .total-cell {{ background: #262626 !important; font-weight: 900 !important; color: {ORANGE} !important; }}
 
-        table.hh-table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 1.25rem;
-        }}
-
-        table.hh-table th {{
-            background: #fff;
-            color: {DARK_TEXT};
-            border-bottom: 2px solid {BG_APP};
-            padding: 15px;
-            font-weight: 800;
-        }}
-
-        table.hh-table td {{
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid {BG_APP};
-            color: {DARK_TEXT};
-        }}
-
-        table.hh-table td:first-child {{
-            text-align: left;
-            font-weight: 800;
-            background: #fdfdfd;
-            border-right: 2px solid {BG_APP};
-        }}
-
-        .total-cell {{
-            background: #f8fafc !important;
-            font-weight: 900 !important;
-            color: {ORANGE} !important;
-        }}
-
-        /* Estilo para a Sidebar de Upload */
-        [data-testid="stSidebar"] {{
-            background-color: {WHITE};
-            border-right: 1px solid {BORDER};
-        }}
+        /* Sidebar Dark */
+        [data-testid="stSidebar"] {{ background-color: #0a0a0a; border-right: 1px solid {BORDER_DARK}; }}
+        .stMarkdown {{ color: {TEXT_WHITE}; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -225,19 +151,14 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # --- BARRA LATERAL (UPLOAD) ---
     with st.sidebar:
-        st.markdown(f"<h2 style='color:{ORANGE}; margin-bottom:0;'>⚙️ Upload</h2>", unsafe_allow_html=True)
-        st.caption("Ezequiel Souza Miranda Junior")
-        st.markdown("---")
-        uploaded = st.file_uploader("Selecione a base (XLSX/CSV)", type=["xlsx", "csv"])
-        if uploaded:
-            st.success("✅ Base carregada!")
+        st.markdown(f"<h2 style='color:{ORANGE};'>⚙️ Painel Dark</h2>", unsafe_allow_html=True)
+        st.caption("Ezequiel Miranda - Edição Black")
+        uploaded = st.file_uploader("Upload da Base", type=["xlsx", "csv"])
     
-    # Se não houver arquivo, mostra tela de espera
     if not uploaded:
         st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.info("👈 **Aguardando dados.** Use o menu na lateral esquerda para fazer o upload da base.")
+        st.info("👈 **Fundo Black Ativado.** Por favor, insira a base de dados na lateral.")
         st.stop()
 
     # Processamento
@@ -251,10 +172,9 @@ def main():
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # --- TÍTULO ---
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
 
-    # --- CARDS DE MÉTRICAS ---
+    # Métricas Premium Dark
     st.markdown(f"""
     <div class="metric-row">
         <div class="modern-card"><div class="card-accent"></div><div class="m-label">Volume Total</div><div class="m-value">{len(df):,}</div></div>
@@ -264,7 +184,7 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # --- PENDENTES POR ZONA (BORDAS LATERAIS) ---
+    # Zonas com Borda Laranja
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -274,14 +194,9 @@ def main():
         for i, z in enumerate(zonas):
             val = counts.get(z, 0)
             with cols[i % 5]:
-                st.markdown(f"""
-                <div class="zone-card">
-                    <div class="zone-label">{z}</div>
-                    <div class="zone-value">{val}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="zone-card"><div class="zone-label">{z}</div><div class="zone-value">{val}</div></div>""", unsafe_allow_html=True)
 
-    # --- TABELA RESUMO HH ---
+    # Tabelas
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
@@ -291,7 +206,7 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    # --- TABELAS CONFERENTES ---
+    # Conferentes
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
