@@ -1,7 +1,6 @@
 import io
 import re
 from collections import OrderedDict
-
 import pandas as pd
 import streamlit as st
 
@@ -22,7 +21,7 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- OCULTAR ELEMENTOS INTERFACE ---------- */
+        /* ---------- TRECHO DE OCULTAR ELEMENTOS ---------- */
         header {{visibility: hidden;}}
         [data-testid="stToolbar"] {{display: none;}}
         [data-testid="stDecoration"] {{display: none;}}
@@ -155,31 +154,6 @@ def inject_css() -> None:
             font-weight: 900 !important;
             color: {ORANGE} !important;
         }}
-
-        /* ---------- ESTILO DO BOTÃO DE PRINT (LADO ESQUERDO) ---------- */
-        .print-btn-container {{
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 1000;
-        }}
-        .print-btn {{
-            background-color: {ORANGE};
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: sans-serif;
-        }}
-        .print-btn:hover {{
-            background-color: #d97706;
-        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -308,33 +282,61 @@ def main():
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
 
+    # Fim da Área de Captura
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT PARA SALVAR COMO PNG (BOTÃO À ESQUERDA) ---
-    st.markdown("""
+    # --- SCRIPT DE CAPTURA ROBUSTO (BOTÃO LADO ESQUERDO) ---
+    st.components.v1.html(
+        f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <div class="print-btn-container">
-            <button class="print-btn" onclick="saveDashboard()">
+        <div style="position: fixed; bottom: 10px; left: 10px; z-index: 9999;">
+            <button id="btn-screenshot" style="
+                background-color: {ORANGE};
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 50px;
+                font-weight: bold;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                font-family: sans-serif;
+            ">
                 📸 Salvar PNG
             </button>
         </div>
+
         <script>
-        function saveDashboard() {
-            const area = document.querySelector("#capture-area");
-            html2canvas(area, {
-                backgroundColor: "#f1f5f9",
+        const btn = document.getElementById('btn-screenshot');
+        btn.addEventListener('click', function() {{
+            // Busca a área no documento pai do Streamlit
+            const area = window.parent.document.querySelector("#capture-area");
+            
+            if (!area) {{
+                alert("Erro: Área de captura não encontrada. Tente carregar o arquivo novamente.");
+                return;
+            }}
+
+            html2canvas(area, {{
+                backgroundColor: "{BG_APP}",
                 scale: 2,
-                logging: false,
-                useCORS: true
-            }).then(canvas => {
+                useCORS: true,
+                allowTaint: true,
+                letterRendering: true
+            }}).then(canvas => {{
                 const link = document.createElement('a');
-                link.download = 'HH_Inventario_' + new Date().toLocaleDateString() + '.png';
+                const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
+                link.download = 'HH_Inventario_' + dataStr + '.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-            });
-        }
+            }}).catch(err => {{
+                console.error("Erro na captura:", err);
+                alert("Falha ao gerar imagem.");
+            }});
+        }});
         </script>
-    """, unsafe_allow_html=True)
+        """,
+        height=70,
+    )
 
 if __name__ == "__main__":
     main()
