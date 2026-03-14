@@ -1,27 +1,28 @@
 import io
 import re
 from collections import OrderedDict
+
 import pandas as pd
 import streamlit as st
 
-# Configuração da página para ocupar toda a largura
+# Configuração da página
 st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
-# Paleta de Cores e Estilo
+# Paleta de Cores Premium
 ORANGE = "#f59e0b"
 DARK_TEXT = "#0f172a"
 METRIC_LABEL = "#475569"
+BORDER = "#e2e8f0"
 BG_APP = "#f1f5f9"
 WHITE = "#ffffff"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
 
 def inject_css() -> None:
-    """Injeta CSS para remover menus e estilizar cards e tabelas para print limpo."""
     st.markdown(
         f"""
         <style>
-        /* ---------- REMOÇÃO DE ELEMENTOS DO STREAMLIT ---------- */
+        /* ---------- LIMPEZA E BASE ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
@@ -29,17 +30,13 @@ def inject_css() -> None:
         [data-testid="stToolbar"] {{display:none;}}
         [data-testid="stDecoration"] {{display:none;}}
         
-        /* Oculta o botão 'Manage app' que aparece no Streamlit Cloud */
-        button[title="Manage app"] {{ display: none !important; }}
-
-        /* ---------- LAYOUT E FUNDO ---------- */
         .stApp {{ background: {BG_APP}; }}
-        .block-container {{ padding-top: 1rem; padding-bottom: 1rem; max-width: 98%; }}
+        .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
 
-        /* ---------- DESIGN DO TÍTULO ---------- */
+        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
         .main-header {{
             text-align: center;
-            padding: 10px 0 30px 0;
+            padding: 20px 0 40px 0;
         }}
         .main-header h1 {{
             font-size: 3.5rem;
@@ -52,85 +49,117 @@ def inject_css() -> None:
             -webkit-text-fill-color: transparent;
         }}
 
-        /* ---------- CARDS DE MÉTRICAS (TOP) ---------- */
+        /* ---------- CONTAINER DE CARDS ---------- */
         .metric-row {{
             display: flex;
             justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 40px;
         }}
+
         .modern-card {{
             background: {WHITE};
             flex: 1;
-            padding: 20px;
-            border-radius: 15px;
+            padding: 25px 20px;
+            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.7);
             position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
         }}
-        .card-accent {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: {ORANGE};
+        
+        .modern-card:hover {{
+            transform: translateY(-5px);
         }}
-        .m-label {{ color: {METRIC_LABEL}; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }}
-        .m-value {{ color: {DARK_TEXT}; font-size: 2.8rem; font-weight: 900; line-height: 1; }}
 
-        /* ---------- ESTILO DAS SEÇÕES E TABELAS ---------- */
+        /* Detalhe colorido no topo dos cards */
+        .card-accent {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: {ORANGE};
+        }}
+
+        .m-label {{
+            color: {METRIC_LABEL};
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }}
+
+        .m-value {{
+            color: {DARK_TEXT};
+            font-size: 3.2rem;
+            font-weight: 900;
+            line-height: 1;
+        }}
+
+        /* ---------- SEÇÕES E TABELAS ---------- */
         .section-header {{
             background: {ORANGE};
             color: white;
-            padding: 10px 15px;
-            border-radius: 10px 10px 0 0;
+            padding: 12px 20px;
+            border-radius: 15px 15px 0 0;
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             margin-top: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
+
         .table-container {{
             background: {WHITE};
-            border-radius: 0 0 10px 10px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border-radius: 0 0 15px 15px;
+            padding: 5px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
             overflow: hidden;
         }}
+
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.1rem;
+            font-size: 1.25rem;
         }}
+
         table.hh-table th {{
-            background: rgba(245, 158, 11, 0.1);
+            background: #fff;
             color: {DARK_TEXT};
-            padding: 12px;
-            border: 1px solid #eee;
+            border-bottom: 2px solid {BG_APP};
+            padding: 15px;
             font-weight: 800;
         }}
+
         table.hh-table td {{
-            padding: 10px;
+            padding: 15px;
             text-align: center;
-            border: 1px solid #eee;
+            border-bottom: 1px solid {BG_APP};
             color: {DARK_TEXT};
         }}
+
         table.hh-table td:first-child {{
             text-align: left;
             font-weight: 800;
-            background: #fafafa;
+            background: #fdfdfd;
+            border-right: 2px solid {BG_APP};
         }}
+
         .total-cell {{
             background: #f8fafc !important;
             font-weight: 900 !important;
             color: {ORANGE} !important;
-        }}
-
-        /* Esconder controles de upload no momento do print se desejar */
-        @media print {{
-            .stFileUploader {{ display: none; }}
-            .stDownloadButton {{ display: none; }}
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+# Funções de Processamento (Mantendo a lógica que já funciona perfeitamente)
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
@@ -147,7 +176,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         if col not in df.columns: df[col] = pd.NA
     return df
 
-def parse_hour(value) -> int:
+def parse_hour(value) -> float:
     if pd.isna(value): return pd.NA
     text = str(value).strip().replace(".", ":")
     match = re.search(r"(\d{1,2}:\d{2}\s*[ap]m)", text, flags=re.I)
@@ -176,55 +205,79 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Área de Upload (discreta)
-    with st.expander("📂 Carregar Base de Dados", expanded=True):
-        uploaded = st.file_uploader("", type=["xlsx", "csv"])
+    # Cabeçalho de Upload
+    with st.sidebar:
+        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     
     if not uploaded:
         st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.warning("Aguardando arquivo para gerar o painel...")
+        st.info("Por favor, faça o upload da base de dados no menu lateral.")
         st.stop()
 
-    # Processamento dos Dados
+    # Processamento
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
     
     valid_hours = sorted([int(h) for h in df["Hora"].dropna().unique().tolist()])
-    if not valid_hours: 
-        st.error("Erro ao processar as horas. Verifique a coluna 'Data de Escaneamento'.")
-        st.stop()
-        
+    if not valid_hours: st.stop()
     base_h = min(valid_hours)
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # --- RENDERIZAÇÃO DO PAINEL ---
+    # --- TOP INTERFACE ---
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
 
-    # Cards Principais
+    # Métricas Premium
+    v_total = len(df)
+    v_verif = int((df['Situação'] == 'Verificados').sum())
+    v_pend = int((df['Situação'] == 'Pendente').sum())
+    v_desl = int((df['Situação'] == 'Deslocado').sum())
+
     st.markdown(f"""
     <div class="metric-row">
-        <div class="modern-card"><div class="card-accent"></div><div class="m-label">Volume Total</div><div class="m-value">{len(df):,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#22c55e"></div><div class="m-label">Verificados</div><div class="m-value">{int((df['Situação'] == 'Verificados').sum()):,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#ef4444"></div><div class="m-label">Pendentes</div><div class="m-value">{int((df['Situação'] == 'Pendente').sum()):,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#3b82f6"></div><div class="m-label">Deslocados</div><div class="m-value">{int((df['Situação'] == 'Deslocado').sum()):,}</div></div>
+        <div class="modern-card">
+            <div class="card-accent"></div>
+            <div class="m-label">Volume Total</div>
+            <div class="m-value">{v_total:,}</div>
+        </div>
+        <div class="modern-card">
+            <div class="card-accent" style="background:#22c55e"></div>
+            <div class="m-label">Verificados</div>
+            <div class="m-value">{v_verif:,}</div>
+        </div>
+        <div class="modern-card">
+            <div class="card-accent" style="background:#ef4444"></div>
+            <div class="m-label">Pendentes</div>
+            <div class="m-value">{v_pend:,}</div>
+        </div>
+        <div class="modern-card">
+            <div class="card-accent" style="background:#3b82f6"></div>
+            <div class="m-label">Deslocados</div>
+            <div class="m-value">{v_desl:,}</div>
+        </div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # Pendentes por Zona (Cards Menores)
+    # --- ZONAS ---
     if "Área" in df.columns:
-        st.markdown("<div class='section-header'>Pendentes Zona</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
         zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
+        
         cols = st.columns(5)
         for i, z in enumerate(zonas):
             val = counts.get(z, 0)
             with cols[i % 5]:
-                st.markdown(f'<div style="background:white; padding:15px; border-radius:12px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.05); margin-bottom:10px; border:1px solid #eee;"><div style="font-size:0.75rem; color:#64748b; font-weight:800;">{z}</div><div style="font-size:1.6rem; font-weight:900; color:{DARK_TEXT}">{val}</div></div>', unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9">
+                    <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
+                    <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-    # Resumo Operacional
-    st.markdown("<div class='section-header'>Resumo HH</div>", unsafe_allow_html=True)
+    # --- TABELAS ---
+    st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
         row = OrderedDict({"QTD / Status": s})
@@ -233,7 +286,7 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    # Operadores
+    # Tabelas de Conferentes
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
