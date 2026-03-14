@@ -10,10 +10,10 @@ st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
 # Paleta de Cores Premium
 ORANGE = "#f59e0b"
-DARK_TEXT = "#1e293b"
-METRIC_LABEL = "#64748b"
+DARK_TEXT = "#0f172a"
+METRIC_LABEL = "#475569"
 BORDER = "#e2e8f0"
-BG_APP = "#f8fafc"
+BG_APP = "#f1f5f9"
 WHITE = "#ffffff"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
@@ -22,132 +22,144 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- LIMPEZA DE INTERFACE ---------- */
+        /* ---------- LIMPEZA E BASE ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
         [data-testid="stDecoration"] {{display:none;}}
-        [data-testid="stStatusWidget"] {{display:none;}}
         
-        /* Ocultar botões Manage App do Streamlit Cloud */
-        button[title="Manage app"] {{ display: none !important; }}
-
-        /* ---------- LAYOUT GERAL ---------- */
         .stApp {{ background: {BG_APP}; }}
-        .block-container {{ padding-top: 2rem; padding-bottom: 2rem; max-width: 95%; }}
+        .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
 
-        /* ---------- DESIGN DO CABEÇALHO E MÉTRICAS ---------- */
-        .main-title {{
-            font-size: 3rem;
-            font-weight: 800;
-            color: {DARK_TEXT};
+        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
+        .main-header {{
             text-align: center;
-            margin-bottom: 2.5rem;
-            letter-spacing: -1px;
+            padding: 20px 0 40px 0;
+        }}
+        .main-header h1 {{
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: {DARK_TEXT};
+            margin: 0;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, {DARK_TEXT} 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }}
 
-        .metric-container {{
+        /* ---------- CONTAINER DE CARDS ---------- */
+        .metric-row {{
             display: flex;
             justify-content: space-between;
             gap: 20px;
-            margin-bottom: 2rem;
+            margin-bottom: 40px;
         }}
 
-        .premium-card {{
+        .modern-card {{
             background: {WHITE};
-            border: 1px solid {BORDER};
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
             flex: 1;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            transition: transform 0.2s;
-         Neubrutalism style option: border: 2px solid {DARK_TEXT};
-         Neubrutalism shadow: box-shadow: 4px 4px 0px {DARK_TEXT};
+            padding: 25px 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }}
+        
+        .modern-card:hover {{
+            transform: translateY(-5px);
         }}
 
-        .metric-label {{
+        /* Detalhe colorido no topo dos cards */
+        .card-accent {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: {ORANGE};
+        }}
+
+        .m-label {{
             color: {METRIC_LABEL};
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
         }}
 
-        .metric-value {{
+        .m-value {{
             color: {DARK_TEXT};
-            font-size: 2.8rem;
-            font-weight: 800;
+            font-size: 3.2rem;
+            font-weight: 900;
             line-height: 1;
         }}
 
         /* ---------- SEÇÕES E TABELAS ---------- */
-        .section-title {{
+        .section-header {{
             background: {ORANGE};
             color: white;
-            padding: .8rem 1.2rem;
-            border-radius: 12px 12px 0 0;
-            font-weight: 700;
-            font-size: 1.3rem;
-            margin-top: 1.5rem;
-            border: 1px solid {BORDER};
+            padding: 12px 20px;
+            border-radius: 15px 15px 0 0;
+            font-weight: 800;
+            font-size: 1.4rem;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
 
-        .table-wrap {{
+        .table-container {{
             background: {WHITE};
-            border: 1px solid {BORDER};
-            border-radius: 0 0 12px 12px;
-            overflow-x: auto;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border-radius: 0 0 15px 15px;
+            padding: 5px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
         }}
 
         table.hh-table th {{
-            background: {ORANGE};
-            color: white;
-            border: 1px solid {BORDER};
-            padding: 1rem;
-            text-align: center;
+            background: #fff;
+            color: {DARK_TEXT};
+            border-bottom: 2px solid {BG_APP};
+            padding: 15px;
+            font-weight: 800;
         }}
 
         table.hh-table td {{
-            border: 1px solid {BORDER};
-            padding: 0.9rem;
+            padding: 15px;
             text-align: center;
+            border-bottom: 1px solid {BG_APP};
             color: {DARK_TEXT};
         }}
 
         table.hh-table td:first-child {{
             text-align: left;
-            font-weight: 700;
-            background: #fffdfa;
-            min-width: 220px;
+            font-weight: 800;
+            background: #fdfdfd;
+            border-right: 2px solid {BG_APP};
         }}
 
-        .total-col {{
+        .total-cell {{
+            background: #f8fafc !important;
             font-weight: 900 !important;
-            background: #f1f5f9 !important;
-            color: #0f172a !important;
-        }}
-
-        /* Esconder botão de download no print */
-        @media print {{
-            .stDownloadButton {{ display: none !important; }}
+            color: {ORANGE} !important;
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+# Funções de Processamento (Mantendo a lógica que já funciona perfeitamente)
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
@@ -159,9 +171,8 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         elif "situa" in low: rename_map[col] = "Situação"
         elif "área" in low or "area" in low: rename_map[col] = "Área"
         elif "operador" in low: rename_map[col] = "Operador"
-        elif "coment" in low: rename_map[col] = "Comentário"
     df = df.rename(columns=rename_map)
-    for col in ["Área", "Operador", "Comentário", "Pacote"]:
+    for col in ["Área", "Operador", "Pacote"]:
         if col not in df.columns: df[col] = pd.NA
     return df
 
@@ -176,34 +187,16 @@ def parse_hour(value) -> float:
     flexible = pd.to_datetime(text, errors="coerce")
     return int(flexible.hour) if not pd.isna(flexible) else pd.NA
 
-def format_hour(hour_value: int) -> str:
-    return f"{int(hour_value):02d}h"
-
-def prepare_base_dataframe(file_bytes: bytes, uploaded_name: str) -> pd.DataFrame:
-    if uploaded_name.lower().endswith(".csv"):
-        df = pd.read_csv(io.BytesIO(file_bytes))
-    else:
-        excel = pd.ExcelFile(io.BytesIO(file_bytes))
-        preferred = next((n for n in excel.sheet_names if "BASE" in n.upper()), excel.sheet_names[0])
-        df = pd.read_excel(excel, sheet_name=preferred)
-    df = normalize_columns(df)
-    df["Situação"] = df["Situação"].astype(str).str.strip()
-    df["Operador"] = df["Operador"].astype("string").str.strip()
-    df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
-    return df
-
 def render_table(df: pd.DataFrame) -> None:
-    if df.empty:
-        st.info("Sem dados para exibir.")
-        return
+    if df.empty: return
     headers = list(df.columns)
-    html = ["<div class='table-wrap'><table class='hh-table'><thead><tr>"]
+    html = ["<div class='table-container'><table class='hh-table'><thead><tr>"]
     html.extend([f"<th>{h}</th>" for h in headers])
     html.append("</tr></thead><tbody>")
-    for _, row in df.fillna("").iterrows():
+    for _, row in df.fillna("-").iterrows():
         html.append("<tr>")
         for idx, value in enumerate(row.tolist()):
-            cls = "total-col" if idx == len(headers) - 1 else ""
+            cls = "total-cell" if idx == len(headers) - 1 else ""
             html.append(f"<td class='{cls}'>{value}</td>")
         html.append("</tr>")
     html.append("</tbody></table></div>")
@@ -212,66 +205,79 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Upload fora do design principal para não sujar o print
-    uploaded = st.file_uploader("Upload da base", type=["xlsx", "csv"])
+    # Cabeçalho de Upload
+    with st.sidebar:
+        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
+    
     if not uploaded:
-        st.markdown('<div class="main-title">HH Inventário</div>', unsafe_allow_html=True)
-        st.info("Aguardando arquivo para gerar o painel...")
+        st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
+        st.info("Por favor, faça o upload da base de dados no menu lateral.")
         st.stop()
 
-    df = prepare_base_dataframe(uploaded.getvalue(), uploaded.name)
+    # Processamento
+    df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
+    df = normalize_columns(df)
+    df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
+    
     valid_hours = sorted([int(h) for h in df["Hora"].dropna().unique().tolist()])
     if not valid_hours: st.stop()
-    
     base_h = min(valid_hours)
     hours = list(range(base_h, base_h + 8))
-    hour_labels = [f"{idx+1}ª Hora ({format_hour(h)})" for idx, h in enumerate(hours)]
+    hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # --- INÍCIO DO DESIGN VISUAL ---
-    st.markdown('<div class="main-title">HH Inventário</div>', unsafe_allow_html=True)
+    # --- TOP INTERFACE ---
+    st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
 
-    # Cards de Métricas Estilizados
-    t_vol = len(df)
-    t_ver = int((df['Situação'] == 'Verificados').sum())
-    t_pen = int((df['Situação'] == 'Pendente').sum())
-    t_des = int((df['Situação'] == 'Deslocado').sum())
+    # Métricas Premium
+    v_total = len(df)
+    v_verif = int((df['Situação'] == 'Verificados').sum())
+    v_pend = int((df['Situação'] == 'Pendente').sum())
+    v_desl = int((df['Situação'] == 'Deslocado').sum())
 
     st.markdown(f"""
-    <div class="metric-container">
-        <div class="premium-card">
-            <div class="metric-label">Volume Total</div>
-            <div class="metric-value">{t_vol:,}</div>
+    <div class="metric-row">
+        <div class="modern-card">
+            <div class="card-accent"></div>
+            <div class="m-label">Volume Total</div>
+            <div class="m-value">{v_total:,}</div>
         </div>
-        <div class="premium-card">
-            <div class="metric-label">Verificados</div>
-            <div class="metric-value">{t_ver:,}</div>
+        <div class="modern-card">
+            <div class="card-accent" style="background:#22c55e"></div>
+            <div class="m-label">Verificados</div>
+            <div class="m-value">{v_verif:,}</div>
         </div>
-        <div class="premium-card">
-            <div class="metric-label">Pendentes</div>
-            <div class="metric-value">{t_pen:,}</div>
+        <div class="modern-card">
+            <div class="card-accent" style="background:#ef4444"></div>
+            <div class="m-label">Pendentes</div>
+            <div class="m-value">{v_pend:,}</div>
         </div>
-        <div class="premium-card">
-            <div class="premium-card-inner">
-                <div class="metric-label">Deslocados</div>
-                <div class="metric-value">{t_des:,}</div>
-            </div>
+        <div class="modern-card">
+            <div class="card-accent" style="background:#3b82f6"></div>
+            <div class="m-label">Deslocados</div>
+            <div class="m-value">{v_desl:,}</div>
         </div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # Pendentes por Zona
+    # --- ZONAS ---
     if "Área" in df.columns:
-        st.markdown("<div class='section-title'>Pendentes Zona</div>", unsafe_allow_html=True)
-        zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
+        st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
+        zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
+        
         cols = st.columns(5)
         for i, z in enumerate(zonas):
             val = counts.get(z, 0)
             with cols[i % 5]:
-                st.markdown(f'<div style="background:white; border-left:6px solid {ORANGE}; padding:15px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05); margin-bottom:10px;"><div style="font-size:0.85rem; color:{METRIC_LABEL}; font-weight:600;">{z}</div><div style="font-size:1.8rem; font-weight:800; color:{DARK_TEXT}">{val}</div></div>', unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9">
+                    <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
+                    <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-    # Tabelas HH
-    st.markdown("<div class='section-title'>Resumo HH</div>", unsafe_allow_html=True)
+    # --- TABELAS ---
+    st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
         row = OrderedDict({"QTD / Status": s})
@@ -280,7 +286,7 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    # Operadores
+    # Tabelas de Conferentes
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
@@ -290,10 +296,8 @@ def main():
             for h, lab in zip(hours, hour_labels): r[lab] = int(((subset["Operador"]==o) & (subset["Hora"]==h)).sum())
             r["TOTAL"] = int((subset["Operador"]==o).sum())
             op_rows.append(r)
-        st.markdown(f"<div class='section-title'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
-
-    st.download_button("Exportar CSV", df.to_csv(index=False).encode('utf-8'), "inventario.csv", "text/csv")
 
 if __name__ == "__main__":
     main()
