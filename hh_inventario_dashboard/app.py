@@ -10,10 +10,10 @@ st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
 # Paleta de Cores Premium
 ORANGE = "#f59e0b"
-DARK_TEXT = "#1e293b"
-METRIC_LABEL = "#64748b"
+DARK_TEXT = "#0f172a"
+METRIC_LABEL = "#475569"
 BORDER = "#e2e8f0"
-BG_APP = "#f8fafc"
+BG_APP = "#f1f5f9"
 WHITE = "#ffffff"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
