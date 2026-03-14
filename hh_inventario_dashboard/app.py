@@ -29,6 +29,7 @@ def inject_css() -> None:
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
         [data-testid="stDecoration"] {{display:none;}}
+        button[title="Manage app"] {{ display: none !important; }}
         
         .stApp {{ background: {BG_APP}; }}
         .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
@@ -49,7 +50,7 @@ def inject_css() -> None:
             -webkit-text-fill-color: transparent;
         }}
 
-        /* ---------- CONTAINER DE CARDS ---------- */
+        /* ---------- CONTAINER DE CARDS PRINCIPAIS ---------- */
         .metric-row {{
             display: flex;
             justify-content: space-between;
@@ -63,18 +64,14 @@ def inject_css() -> None:
             padding: 25px 20px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.7);
             position: relative;
             overflow: hidden;
             transition: transform 0.3s ease;
         }}
-        
-        .modern-card:hover {{
-            transform: translateY(-5px);
-        }}
 
-        /* Detalhe colorido no topo dos cards */
+        /* Detalhe colorido no topo dos cards principais */
         .card-accent {{
             position: absolute;
             top: 0;
@@ -98,6 +95,32 @@ def inject_css() -> None:
             font-size: 3.2rem;
             font-weight: 900;
             line-height: 1;
+        }}
+
+        /* ---------- CARDS DE ZONA (COM BORDA LATERAL LARANJA) ---------- */
+        .zone-card {{
+            background: {WHITE};
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            margin-bottom: 15px;
+            border: 1px solid #f1f5f9;
+            border-left: 6px solid {ORANGE}; /* Borda lateral recuperada */
+        }}
+
+        .zone-label {{
+            font-size: 0.8rem;
+            color: {METRIC_LABEL};
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }}
+
+        .zone-value {{
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: {DARK_TEXT};
         }}
 
         /* ---------- SEÇÕES E TABELAS ---------- */
@@ -159,7 +182,6 @@ def inject_css() -> None:
         unsafe_allow_html=True,
     )
 
-# Funções de Processamento (Mantendo a lógica que já funciona perfeitamente)
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
@@ -205,13 +227,16 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Cabeçalho de Upload
+    # Barra Lateral para Upload (Pode ser minimizada pelo usuário no Streamlit)
     with st.sidebar:
-        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
+        st.markdown(f"### ⚙️ Painel de Controle")
+        uploaded = st.file_uploader("Upload da Base", type=["xlsx", "csv"])
+        if uploaded:
+            st.success("Arquivo carregado!")
     
     if not uploaded:
         st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.info("Por favor, faça o upload da base de dados no menu lateral.")
+        st.info("Aguardando upload da base no menu lateral para gerar o painel.")
         st.stop()
 
     # Processamento
@@ -225,10 +250,10 @@ def main():
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # --- TOP INTERFACE ---
+    # --- TÍTULO PRINCIPAL ---
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
 
-    # Métricas Premium
+    # --- MÉTRICAS PRINCIPAIS (COM DESIGN PREMIUM) ---
     v_total = len(df)
     v_verif = int((df['Situação'] == 'Verificados').sum())
     v_pend = int((df['Situação'] == 'Pendente').sum())
@@ -259,7 +284,7 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # --- ZONAS ---
+    # --- PENDENTES POR ZONA (BORDAS LATERAIS LARANJAS) ---
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -270,13 +295,13 @@ def main():
             val = counts.get(z, 0)
             with cols[i % 5]:
                 st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9">
-                    <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
-                    <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
+                <div class="zone-card">
+                    <div class="zone-label">{z}</div>
+                    <div class="zone-value">{val}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-    # --- TABELAS ---
+    # --- TABELA RESUMO HH ---
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
@@ -286,7 +311,7 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    # Tabelas de Conferentes
+    # --- TABELAS DE CONFERENTES ---
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
