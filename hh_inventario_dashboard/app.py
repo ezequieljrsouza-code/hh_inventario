@@ -1,18 +1,16 @@
 import io
 import re
 from collections import OrderedDict
-
 import pandas as pd
 import streamlit as st
 
 # Configuração da página
 st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
-# Paleta de Cores Premium
+# Paleta de Cores
 ORANGE = "#f59e0b"
 DARK_TEXT = "#0f172a"
 METRIC_LABEL = "#475569"
-BORDER = "#e2e8f0"
 BG_APP = "#f1f5f9"
 WHITE = "#ffffff"
 
@@ -22,22 +20,21 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- LIMPEZA E BASE ---------- */
+        /* ---------- REMOÇÃO DE INTERFACE STREAMLIT ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
         [data-testid="stDecoration"] {{display:none;}}
-        
-        .stApp {{ background: {BG_APP}; }}
-        .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
+        button[title="Manage app"] {{ display: none !important; }}
 
-        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
-        .main-header {{
-            text-align: center;
-            padding: 20px 0 40px 0;
-        }}
+        /* ---------- LAYOUT ---------- */
+        .stApp {{ background: {BG_APP}; }}
+        .block-container {{ padding-top: 1rem; max-width: 98%; }}
+
+        /* ---------- TÍTULO ---------- */
+        .main-header {{ text-align: center; padding: 10px 0 30px 0; }}
         .main-header h1 {{
             font-size: 3.5rem;
             font-weight: 900;
@@ -49,117 +46,65 @@ def inject_css() -> None:
             -webkit-text-fill-color: transparent;
         }}
 
-        /* ---------- CONTAINER DE CARDS ---------- */
-        .metric-row {{
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 40px;
-        }}
-
+        /* ---------- CARDS PRINCIPAIS (TOPO) ---------- */
+        .metric-row {{ display: flex; justify-content: space-between; gap: 15px; margin-bottom: 30px; }}
         .modern-card {{
             background: {WHITE};
             flex: 1;
-            padding: 25px 20px;
-            border-radius: 20px;
+            padding: 20px;
+            border-radius: 15px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease;
         }}
-        
-        .modern-card:hover {{
-            transform: translateY(-5px);
-        }}
+        .card-accent-top {{ position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: {ORANGE}; }}
+        .m-label {{ color: {METRIC_LABEL}; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }}
+        .m-value {{ color: {DARK_TEXT}; font-size: 2.8rem; font-weight: 900; line-height: 1; }}
 
-        /* Detalhe colorido no topo dos cards */
-        .card-accent {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: {ORANGE};
+        /* ---------- CARDS DE ZONA (COM BORDA LATERAL) ---------- */
+        .zone-card {{
+            background: {WHITE};
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 15px;
+            border-left: 6px solid {ORANGE}; /* Borda lateral recuperada */
+            border-top: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9;
         }}
+        .zone-label {{ font-size: 0.75rem; color: {METRIC_LABEL}; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }}
+        .zone-value {{ font-size: 1.8rem; font-weight: 900; color: {DARK_TEXT}; }}
 
-        .m-label {{
-            color: {METRIC_LABEL};
-            font-size: 0.95rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }}
-
-        .m-value {{
-            color: {DARK_TEXT};
-            font-size: 3.2rem;
-            font-weight: 900;
-            line-height: 1;
-        }}
-
-        /* ---------- SEÇÕES E TABELAS ---------- */
+        /* ---------- TABELAS ---------- */
         .section-header {{
             background: {ORANGE};
             color: white;
-            padding: 12px 20px;
-            border-radius: 15px 15px 0 0;
+            padding: 10px 15px;
+            border-radius: 10px 10px 0 0;
             font-weight: 800;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
-
         .table-container {{
             background: {WHITE};
-            border-radius: 0 0 15px 15px;
-            padding: 5px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
             overflow: hidden;
         }}
-
-        table.hh-table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 1.25rem;
-        }}
-
-        table.hh-table th {{
-            background: #fff;
-            color: {DARK_TEXT};
-            border-bottom: 2px solid {BG_APP};
-            padding: 15px;
-            font-weight: 800;
-        }}
-
-        table.hh-table td {{
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid {BG_APP};
-            color: {DARK_TEXT};
-        }}
-
-        table.hh-table td:first-child {{
-            text-align: left;
-            font-weight: 800;
-            background: #fdfdfd;
-            border-right: 2px solid {BG_APP};
-        }}
-
-        .total-cell {{
-            background: #f8fafc !important;
-            font-weight: 900 !important;
-            color: {ORANGE} !important;
-        }}
+        table.hh-table {{ width: 100%; border-collapse: collapse; font-size: 1.1rem; }}
+        table.hh-table th {{ background: rgba(245, 158, 11, 0.05); color: {DARK_TEXT}; padding: 12px; border: 1px solid #eee; font-weight: 800; }}
+        table.hh-table td {{ padding: 10px; text-align: center; border: 1px solid #eee; color: {DARK_TEXT}; }}
+        table.hh-table td:first-child {{ text-align: left; font-weight: 800; background: #fafafa; }}
+        .total-cell {{ background: #f8fafc !important; font-weight: 900 !important; color: {ORANGE} !important; }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-# Funções de Processamento (Mantendo a lógica que já funciona perfeitamente)
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
@@ -176,7 +121,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         if col not in df.columns: df[col] = pd.NA
     return df
 
-def parse_hour(value) -> float:
+def parse_hour(value) -> int:
     if pd.isna(value): return pd.NA
     text = str(value).strip().replace(".", ":")
     match = re.search(r"(\d{1,2}:\d{2}\s*[ap]m)", text, flags=re.I)
@@ -205,79 +150,55 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Cabeçalho de Upload
-    with st.sidebar:
-        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
+    with st.expander("📂 Configurações de Dados", expanded=True):
+        uploaded = st.file_uploader("", type=["xlsx", "csv"])
     
     if not uploaded:
         st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.info("Por favor, faça o upload da base de dados no menu lateral.")
+        st.warning("Aguardando base de dados...")
         st.stop()
 
-    # Processamento
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
     
     valid_hours = sorted([int(h) for h in df["Hora"].dropna().unique().tolist()])
     if not valid_hours: st.stop()
+        
     base_h = min(valid_hours)
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # --- TOP INTERFACE ---
+    # TÍTULO E MÉTRICAS
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-
-    # Métricas Premium
-    v_total = len(df)
-    v_verif = int((df['Situação'] == 'Verificados').sum())
-    v_pend = int((df['Situação'] == 'Pendente').sum())
-    v_desl = int((df['Situação'] == 'Deslocado').sum())
 
     st.markdown(f"""
     <div class="metric-row">
-        <div class="modern-card">
-            <div class="card-accent"></div>
-            <div class="m-label">Volume Total</div>
-            <div class="m-value">{v_total:,}</div>
-        </div>
-        <div class="modern-card">
-            <div class="card-accent" style="background:#22c55e"></div>
-            <div class="m-label">Verificados</div>
-            <div class="m-value">{v_verif:,}</div>
-        </div>
-        <div class="modern-card">
-            <div class="card-accent" style="background:#ef4444"></div>
-            <div class="m-label">Pendentes</div>
-            <div class="m-value">{v_pend:,}</div>
-        </div>
-        <div class="modern-card">
-            <div class="card-accent" style="background:#3b82f6"></div>
-            <div class="m-label">Deslocados</div>
-            <div class="m-value">{v_desl:,}</div>
-        </div>
+        <div class="modern-card"><div class="card-accent-top"></div><div class="m-label">Volume Total</div><div class="m-value">{len(df):,}</div></div>
+        <div class="modern-card"><div class="card-accent-top" style="background:#22c55e"></div><div class="m-label">Verificados</div><div class="m-value">{int((df['Situação'] == 'Verificados').sum()):,}</div></div>
+        <div class="modern-card"><div class="card-accent-top" style="background:#ef4444"></div><div class="m-label">Pendentes</div><div class="m-value">{int((df['Situação'] == 'Pendente').sum()):,}</div></div>
+        <div class="modern-card"><div class="card-accent-top" style="background:#3b82f6"></div><div class="m-label">Deslocados</div><div class="m-value">{int((df['Situação'] == 'Deslocado').sum()):,}</div></div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # --- ZONAS ---
+    # PENDENTES POR ZONA (COM AS BORDAS LATERAIS PEDIDAS)
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
         zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
-        
         cols = st.columns(5)
         for i, z in enumerate(zonas):
             val = counts.get(z, 0)
             with cols[i % 5]:
                 st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9">
-                    <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
-                    <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
-                </div>
+                    <div class="zone-card">
+                        <div class="zone-label">{z}</div>
+                        <div class="zone-value">{val}</div>
+                    </div>
                 """, unsafe_allow_html=True)
 
-    # --- TABELAS ---
-    st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
+    # TABELAS HH
+    st.markdown("<div class='section-header'>Resumo HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
         row = OrderedDict({"QTD / Status": s})
@@ -286,7 +207,6 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    # Tabelas de Conferentes
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
