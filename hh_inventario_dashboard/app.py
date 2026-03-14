@@ -10,10 +10,10 @@ st.set_page_config(page_title="HH Inventário", page_icon="📦", layout="wide")
 
 # Paleta de Cores Premium
 ORANGE = "#f59e0b"
-DARK_TEXT = "#0f172a"
-METRIC_LABEL = "#475569"
+DARK_TEXT = "#1e293b"
+METRIC_LABEL = "#64748b"
 BORDER = "#e2e8f0"
-BG_APP = "#f1f5f9"
+BG_APP = "#f8fafc"
 WHITE = "#ffffff"
 
 STATUS_ORDER = ["Verificados", "Pendente", "Deslocado"]
@@ -22,137 +22,126 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- LIMPEZA E BASE ---------- */
+        /* ---------- LIMPEZA DE INTERFACE ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
         [data-testid="stDecoration"] {{display:none;}}
+        [data-testid="stStatusWidget"] {{display:none;}}
         
+        /* Ocultar botões Manage App do Streamlit Cloud */
+        button[title="Manage app"] {{ display: none !important; }}
+
+        /* ---------- LAYOUT GERAL ---------- */
         .stApp {{ background: {BG_APP}; }}
-        .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
+        .block-container {{ padding-top: 2rem; padding-bottom: 2rem; max-width: 95%; }}
 
-        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
-        .main-header {{
-            text-align: center;
-            padding: 20px 0 40px 0;
-        }}
-        .main-header h1 {{
-            font-size: 3.5rem;
-            font-weight: 900;
+        /* ---------- DESIGN DO CABEÇALHO E MÉTRICAS ---------- */
+        .main-title {{
+            font-size: 3rem;
+            font-weight: 800;
             color: {DARK_TEXT};
-            margin: 0;
-            letter-spacing: -2px;
-            background: linear-gradient(135deg, {DARK_TEXT} 0%, #334155 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            letter-spacing: -1px;
         }}
 
-        /* ---------- CONTAINER DE CARDS ---------- */
-        .metric-row {{
+        .metric-container {{
             display: flex;
             justify-content: space-between;
             gap: 20px;
-            margin-bottom: 40px;
+            margin-bottom: 2rem;
         }}
 
-        .modern-card {{
+        .premium-card {{
             background: {WHITE};
-            flex: 1;
-            padding: 25px 20px;
-            border-radius: 20px;
+            border: 1px solid {BORDER};
+            border-radius: 16px;
+            padding: 1.5rem;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }}
-        
-        .modern-card:hover {{
-            transform: translateY(-5px);
+            flex: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s;
+         Neubrutalism style option: border: 2px solid {DARK_TEXT};
+         Neubrutalism shadow: box-shadow: 4px 4px 0px {DARK_TEXT};
         }}
 
-        /* Detalhe colorido no topo dos cards */
-        .card-accent {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: {ORANGE};
-        }}
-
-        .m-label {{
+        .metric-label {{
             color: {METRIC_LABEL};
-            font-size: 0.95rem;
-            font-weight: 700;
+            font-size: 0.9rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
         }}
 
-        .m-value {{
+        .metric-value {{
             color: {DARK_TEXT};
-            font-size: 3.2rem;
-            font-weight: 900;
+            font-size: 2.8rem;
+            font-weight: 800;
             line-height: 1;
         }}
 
         /* ---------- SEÇÕES E TABELAS ---------- */
-        .section-header {{
+        .section-title {{
             background: {ORANGE};
             color: white;
-            padding: 12px 20px;
-            border-radius: 15px 15px 0 0;
-            font-weight: 800;
-            font-size: 1.4rem;
-            margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: .8rem 1.2rem;
+            border-radius: 12px 12px 0 0;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            border: 1px solid {BORDER};
         }}
 
-        .table-container {{
+        .table-wrap {{
             background: {WHITE};
-            border-radius: 0 0 15px 15px;
-            padding: 5px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+            border: 1px solid {BORDER};
+            border-radius: 0 0 12px 12px;
+            overflow-x: auto;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
         }}
 
         table.hh-table th {{
-            background: #fff;
-            color: {DARK_TEXT};
-            border-bottom: 2px solid {BG_APP};
-            padding: 15px;
-            font-weight: 800;
+            background: {ORANGE};
+            color: white;
+            border: 1px solid {BORDER};
+            padding: 1rem;
+            text-align: center;
         }}
 
         table.hh-table td {{
-            padding: 15px;
+            border: 1px solid {BORDER};
+            padding: 0.9rem;
             text-align: center;
-            border-bottom: 1px solid {BG_APP};
             color: {DARK_TEXT};
         }}
 
         table.hh-table td:first-child {{
             text-align: left;
-            font-weight: 800;
-            background: #fdfdfd;
-            border-right: 2px solid {BG_APP};
+            font-weight: 700;
+            background: #fffdfa;
+            min-width: 220px;
         }}
 
-        .total-cell {{
-            background: #f8fafc !important;
+        .total-col {{
             font-weight: 900 !important;
-            color: {ORANGE} !important;
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+        }}
+
+        /* Esconder botão de download no print */
+        @media print {{
+            .stDownloadButton {{ display: none !important; }}
         }}
         </style>
         """,
