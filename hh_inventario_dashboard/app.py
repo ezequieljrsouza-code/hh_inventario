@@ -21,20 +21,19 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- TRECHO DE OCULTAR ELEMENTOS ---------- */
+        /* ---------- OCULTAR ELEMENTOS DA INTERFACE ---------- */
         header {{visibility: hidden;}}
         [data-testid="stToolbar"] {{display: none;}}
         [data-testid="stDecoration"] {{display: none;}}
-        
-        /* ---------- LIMPEZA E BASE ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
         
+        /* ---------- CONFIGURAÇÃO DE BASE ---------- */
         .stApp {{ background: {BG_APP}; }}
         .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
 
-        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
+        /* ---------- TÍTULO ---------- */
         .main-header {{
             text-align: center;
             padding: 20px 0 40px 0;
@@ -50,7 +49,7 @@ def inject_css() -> None:
             -webkit-text-fill-color: transparent;
         }}
 
-        /* ---------- CONTAINER DE CARDS ---------- */
+        /* ---------- CARDS DE MÉTRICAS ---------- */
         .metric-row {{
             display: flex;
             justify-content: space-between;
@@ -64,17 +63,12 @@ def inject_css() -> None:
             padding: 25px 20px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.7);
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease;
         }}
         
-        .modern-card:hover {{
-            transform: translateY(-5px);
-        }}
-
         .card-accent {{
             position: absolute;
             top: 0;
@@ -89,7 +83,6 @@ def inject_css() -> None:
             font-size: 0.95rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
             margin-bottom: 12px;
         }}
 
@@ -97,10 +90,9 @@ def inject_css() -> None:
             color: {DARK_TEXT};
             font-size: 3.2rem;
             font-weight: 900;
-            line-height: 1;
         }}
 
-        /* ---------- SEÇÕES E TABELAS ---------- */
+        /* ---------- TABELAS ---------- */
         .section-header {{
             background: {ORANGE};
             color: white;
@@ -109,7 +101,6 @@ def inject_css() -> None:
             font-weight: 800;
             font-size: 1.4rem;
             margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
 
         .table-container {{
@@ -118,7 +109,6 @@ def inject_css() -> None:
             padding: 5px;
             margin-bottom: 30px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
         }}
 
         table.hh-table {{
@@ -128,29 +118,17 @@ def inject_css() -> None:
         }}
 
         table.hh-table th {{
-            background: #fff;
-            color: {DARK_TEXT};
-            border-bottom: 2px solid {BG_APP};
             padding: 15px;
-            font-weight: 800;
+            border-bottom: 2px solid {BG_APP};
         }}
 
         table.hh-table td {{
             padding: 15px;
             text-align: center;
             border-bottom: 1px solid {BG_APP};
-            color: {DARK_TEXT};
-        }}
-
-        table.hh-table td:first-child {{
-            text-align: left;
-            font-weight: 800;
-            background: #fdfdfd;
-            border-right: 2px solid {BG_APP};
         }}
 
         .total-cell {{
-            background: #f8fafc !important;
             font-weight: 900 !important;
             color: {ORANGE} !important;
         }}
@@ -204,20 +182,21 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Upload no topo
-    uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
+    # Upload Lateral
+    with st.sidebar:
+        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     
-    # Título do Painel
+    # Título Principal
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
     
     if not uploaded:
-        st.info("Por favor, faça o upload da base de dados acima para iniciar.")
+        st.info("Por favor, faça o upload da base de dados no menu lateral.")
         st.stop()
 
-    # Início da Área de Captura
+    # --- ÁREA DE CAPTURA INÍCIO ---
     st.markdown('<div id="capture-area">', unsafe_allow_html=True)
 
-    # Processamento
+    # Processamento de Dados
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
@@ -229,10 +208,8 @@ def main():
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
     # Métricas
-    v_total = len(df)
-    v_verif = int((df['Situação'] == 'Verificados').sum())
-    v_pend = int((df['Situação'] == 'Pendente').sum())
-    v_desl = int((df['Situação'] == 'Deslocado').sum())
+    v_total, v_verif = len(df), int((df['Situação'] == 'Verificados').sum())
+    v_pend, v_desl = int((df['Situação'] == 'Pendente').sum()), int((df['Situação'] == 'Deslocado').sum())
 
     st.markdown(f"""
     <div class="metric-row">
@@ -243,24 +220,23 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # Zonas com borda esquerda
+    # Pendentes por Zona
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
         zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
-        
         cols = st.columns(5)
         for i, z in enumerate(zonas):
             val = counts.get(z, 0)
             with cols[i % 5]:
                 st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9; border-left: 6px solid {ORANGE};">
+                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9; border-left: 5px solid {ORANGE};">
                     <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
                     <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-    # Tabelas
+    # Resumo Operacional
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
@@ -270,6 +246,7 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
+    # Tabelas de Conferentes
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
@@ -282,70 +259,43 @@ def main():
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
 
-# Fim da Área de Captura
+    # --- ÁREA DE CAPTURA FIM ---
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT DE CAPTURA CORRIGIDO ---
+    # --- SCRIPT DE PRINT (PNG) ---
     st.components.v1.html(
         f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <div style="position: fixed; bottom: 10px; left: 10px; z-index: 9999;">
-            <button id="btn-screenshot" style="
-                background-color: {ORANGE};
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 50px;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                font-family: sans-serif;
-            ">
-                📸 Salvar PNG
-            </button>
+            <button id="btn-print" style="
+                background-color: {ORANGE}; color: white; border: none; padding: 12px 24px;
+                border-radius: 50px; font-weight: bold; cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-family: sans-serif;
+            ">📸 Salvar PNG</button>
         </div>
-
         <script>
-        const btn = document.getElementById('btn-screenshot');
-        btn.addEventListener('click', function() {{
+        document.getElementById('btn-print').addEventListener('click', function() {{
             const area = window.parent.document.querySelector("#capture-area");
+            if (!area) return;
             
-            if (!area) {{
-                alert("Erro: Área de captura não encontrada.");
-                return;
-            }}
-
-            // Adicionamos um pequeno delay para garantir que o browser processou os estilos
             setTimeout(() => {{
                 html2canvas(area, {{
                     backgroundColor: "{BG_APP}",
                     scale: 2,
                     useCORS: true,
-                    allowTaint: false, // Alterado para false para evitar problemas de segurança que corrompem a imagem
-                    logging: false,
-                    onclone: (clonedDoc) => {{
-                        // Garante que a área clonada esteja visível para a captura
-                        clonedDoc.querySelector("#capture-area").style.display = "block";
-                    }}
+                    logging: false
                 }}).then(canvas => {{
-                    // Verifica se o canvas tem conteúdo
-                    if (canvas.width === 0 || canvas.height === 0) {{
-                        alert("Erro ao gerar imagem. Tente novamente.");
-                        return;
-                    }}
-                    
                     const link = document.createElement('a');
-                    const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
-                    link.download = 'HH_Inventario_' + dataStr + '.png';
+                    link.download = 'HH_Inventario_' + new Date().toLocaleDateString().replace(/\//g, '-') + '.png';
                     link.href = canvas.toDataURL('image/png', 1.0);
                     link.click();
-                }}).catch(err => {{
-                    alert("Falha na renderização.");
-                    console.error(err);
                 }});
-            }}, 500); // Meio segundo de espera
+            }}, 300);
         }});
         </script>
         """,
         height=70,
     )
+
+if __name__ == "__main__":
+    main()
