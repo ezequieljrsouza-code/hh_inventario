@@ -282,10 +282,10 @@ def main():
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
 
-    # Fim da Área de Captura
+# Fim da Área de Captura
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT DE CAPTURA ROBUSTO (BOTÃO LADO ESQUERDO) ---
+    # --- SCRIPT DE CAPTURA CORRIGIDO ---
     st.components.v1.html(
         f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -308,35 +308,44 @@ def main():
         <script>
         const btn = document.getElementById('btn-screenshot');
         btn.addEventListener('click', function() {{
-            // Busca a área no documento pai do Streamlit
             const area = window.parent.document.querySelector("#capture-area");
             
             if (!area) {{
-                alert("Erro: Área de captura não encontrada. Tente carregar o arquivo novamente.");
+                alert("Erro: Área de captura não encontrada.");
                 return;
             }}
 
-            html2canvas(area, {{
-                backgroundColor: "{BG_APP}",
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                letterRendering: true
-            }}).then(canvas => {{
-                const link = document.createElement('a');
-                const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
-                link.download = 'HH_Inventario_' + dataStr + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            }}).catch(err => {{
-                console.error("Erro na captura:", err);
-                alert("Falha ao gerar imagem.");
-            }});
+            // Adicionamos um pequeno delay para garantir que o browser processou os estilos
+            setTimeout(() => {{
+                html2canvas(area, {{
+                    backgroundColor: "{BG_APP}",
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false, // Alterado para false para evitar problemas de segurança que corrompem a imagem
+                    logging: false,
+                    onclone: (clonedDoc) => {{
+                        // Garante que a área clonada esteja visível para a captura
+                        clonedDoc.querySelector("#capture-area").style.display = "block";
+                    }}
+                }}).then(canvas => {{
+                    // Verifica se o canvas tem conteúdo
+                    if (canvas.width === 0 || canvas.height === 0) {{
+                        alert("Erro ao gerar imagem. Tente novamente.");
+                        return;
+                    }}
+                    
+                    const link = document.createElement('a');
+                    const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
+                    link.download = 'HH_Inventario_' + dataStr + '.png';
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                }}).catch(err => {{
+                    alert("Falha na renderização.");
+                    console.error(err);
+                }});
+            }}, 500); // Meio segundo de espera
         }});
         </script>
         """,
         height=70,
     )
-
-if __name__ == "__main__":
-    main()
