@@ -21,23 +21,21 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- TRECHO DE OCULTAR ELEMENTOS ---------- */
-        header {{visibility: hidden;}}
-        [data-testid="stToolbar"] {{display: none;}}
-        [data-testid="stDecoration"] {{display: none;}}
-        
         /* ---------- LIMPEZA E BASE ---------- */
+        header {{visibility: hidden;}}
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
+        [data-testid="stToolbar"] {{display: none;}}
+        [data-testid="stDecoration"] {{display: none;}}
         
         .stApp {{ background: {BG_APP}; }}
-        .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
+        .block-container {{ padding-top: 1rem; max-width: 95%; }}
 
         /* ---------- TÍTULO HH INVENTÁRIO ---------- */
         .main-header {{
             text-align: center;
-            padding: 20px 0 40px 0;
+            padding: 10px 0 30px 0;
         }}
         .main-header h1 {{
             font-size: 3.5rem;
@@ -55,7 +53,7 @@ def inject_css() -> None:
             display: flex;
             justify-content: space-between;
             gap: 20px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }}
 
         .modern-card {{
@@ -64,15 +62,9 @@ def inject_css() -> None:
             padding: 25px 20px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.7);
             position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }}
-        
-        .modern-card:hover {{
-            transform: translateY(-5px);
         }}
 
         .card-accent {{
@@ -89,7 +81,6 @@ def inject_css() -> None:
             font-size: 0.95rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
             margin-bottom: 12px;
         }}
 
@@ -109,7 +100,6 @@ def inject_css() -> None:
             font-weight: 800;
             font-size: 1.4rem;
             margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
 
         .table-container {{
@@ -118,25 +108,24 @@ def inject_css() -> None:
             padding: 5px;
             margin-bottom: 30px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
         }}
 
         table.hh-table th {{
             background: #fff;
             color: {DARK_TEXT};
             border-bottom: 2px solid {BG_APP};
-            padding: 15px;
+            padding: 12px;
             font-weight: 800;
         }}
 
         table.hh-table td {{
-            padding: 15px;
+            padding: 12px;
             text-align: center;
             border-bottom: 1px solid {BG_APP};
             color: {DARK_TEXT};
@@ -204,18 +193,13 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Upload no topo
-    uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
-    
-    # Título do Painel
-    st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
+    with st.sidebar:
+        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     
     if not uploaded:
-        st.info("Por favor, faça o upload da base de dados acima para iniciar.")
+        st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
+        st.info("Por favor, faça o upload da base de dados no menu lateral.")
         st.stop()
-
-    # Início da Área de Captura
-    st.markdown('<div id="capture-area">', unsafe_allow_html=True)
 
     # Processamento
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
@@ -228,13 +212,16 @@ def main():
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
+    # INÍCIO DO CONTEÚDO CAPTURÁVEL
+    st.markdown('<div id="main-content">', unsafe_allow_html=True)
+
+    st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
+
     # Métricas
     v_total = len(df)
     v_verif = int((df['Situação'] == 'Verificados').sum())
     v_pend = int((df['Situação'] == 'Pendente').sum())
     v_desl = int((df['Situação'] == 'Deslocado').sum())
-    
-    # Cálculo da Acuracidade
     v_acu = (v_verif / v_total * 100) if v_total > 0 else 0.0
 
     st.markdown(f"""
@@ -247,7 +234,7 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # Zonas com borda esquerda
+    # Zonas
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -258,7 +245,7 @@ def main():
             val = counts.get(z, 0)
             with cols[i % 5]:
                 st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9; border-left: 6px solid {ORANGE};">
+                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9; border-left: 5px solid {ORANGE}">
                     <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
                     <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
                 </div>
@@ -286,70 +273,48 @@ def main():
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
 
-    # Fim da Área de Captura
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True) # FIM DO CONTEÚDO
 
-    # --- SCRIPT DE CAPTURA ROBUSTO (BOTÃO LADO ESQUERDO) ---
+    # --- SCRIPT DE CAPTURA CORRIGIDO ---
     st.components.v1.html(
         f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <div style="position: fixed; bottom: 10px; left: 10px; z-index: 9999;">
-            <button id="btn-screenshot" style="
-                background-color: {ORANGE};
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 50px;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                font-family: sans-serif;
-            ">
-                📸 Salvar PNG
+        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+            <button id="btn-save" style="
+                background: {ORANGE}; color: white; border: none; padding: 15px 30px;
+                border-radius: 50px; font-weight: bold; cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: sans-serif;">
+                📸 SALVAR PAINEL (PNG)
             </button>
         </div>
-
         <script>
-        const btn = document.getElementById('btn-screenshot');
-        btn.addEventListener('click', function() {{
-            // Busca a área no documento pai do Streamlit
-            const area = window.parent.document.querySelector("#capture-area");
+        document.getElementById('btn-save').onclick = function() {{
+            const area = window.parent.document.getElementById("main-content");
+            if(!area) {{ alert("Erro: Conteúdo não encontrado."); return; }}
             
-            if (!area) {{
-                alert("Erro: Área de captura não encontrada. Tente carregar o arquivo novamente.");
-                return;
-            }}
-
-            // Move a tela para o topo para garantir a captura correta no Streamlit
-            window.parent.scrollTo(0, 0);
-
-            // Pequeno atraso para a tela terminar a rolagem antes da foto
+            // Força o scroll para o topo para evitar cortes
+            window.parent.scrollTo(0,0);
+            
             setTimeout(() => {{
                 html2canvas(area, {{
                     backgroundColor: "{BG_APP}",
                     scale: 2,
+                    logging: false,
                     useCORS: true,
-                    allowTaint: false, // allowTaint em true gera imagem corrompida/em branco
-                    scrollY: 0
+                    allowTaint: false,
+                    windowWidth: area.scrollWidth,
+                    windowHeight: area.scrollHeight
                 }}).then(canvas => {{
-                    if (canvas.width === 0 || canvas.height === 0) {{
-                        alert("Erro ao renderizar a imagem.");
-                        return;
-                    }}
                     const link = document.createElement('a');
-                    const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
-                    link.download = 'HH_Inventario_' + dataStr + '.png';
-                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.download = 'HH_Inventario_' + new Date().toISOString().slice(0,10) + '.png';
+                    link.href = canvas.toDataURL('image/png');
                     link.click();
-                }}).catch(err => {{
-                    console.error("Erro na captura:", err);
-                    alert("Falha ao gerar imagem.");
                 }});
             }}, 500);
-        }});
+        }};
         </script>
         """,
-        height=70,
+        height=100,
     )
 
 if __name__ == "__main__":
