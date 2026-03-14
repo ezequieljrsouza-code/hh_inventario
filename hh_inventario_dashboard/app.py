@@ -29,7 +29,6 @@ def inject_css() -> None:
         .stDeployButton {{display:none;}}
         [data-testid="stToolbar"] {{display:none;}}
         [data-testid="stDecoration"] {{display:none;}}
-        button[title="Manage app"] {{ display: none !important; }}
         
         .stApp {{ background: {BG_APP}; }}
         .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
@@ -68,10 +67,8 @@ def inject_css() -> None:
             border: 1px solid rgba(255, 255, 255, 0.7);
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease;
         }}
 
-        /* Detalhe colorido no topo dos cards principais */
         .card-accent {{
             position: absolute;
             top: 0;
@@ -86,7 +83,6 @@ def inject_css() -> None:
             font-size: 0.95rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
             margin-bottom: 12px;
         }}
 
@@ -97,16 +93,16 @@ def inject_css() -> None:
             line-height: 1;
         }}
 
-        /* ---------- CARDS DE ZONA (COM BORDA LATERAL LARANJA) ---------- */
+        /* ---------- CARDS DE ZONA (BORDAS LATERAIS LARANJAS) ---------- */
         .zone-card {{
             background: {WHITE};
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 12px;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             margin-bottom: 15px;
             border: 1px solid #f1f5f9;
-            border-left: 6px solid {ORANGE}; /* Borda lateral recuperada */
+            border-left: 8px solid {ORANGE} !important; /* Borda lateral laranjas reintegradada */
         }}
 
         .zone-label {{
@@ -132,7 +128,6 @@ def inject_css() -> None:
             font-weight: 800;
             font-size: 1.4rem;
             margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
 
         .table-container {{
@@ -176,6 +171,12 @@ def inject_css() -> None:
             background: #f8fafc !important;
             font-weight: 900 !important;
             color: {ORANGE} !important;
+        }}
+
+        /* Ajuste específico para a Sidebar */
+        [data-testid="stSidebar"] {{
+            background-color: {WHITE};
+            border-right: 1px solid {BORDER};
         }}
         </style>
         """,
@@ -227,16 +228,16 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Barra Lateral para Upload (Pode ser minimizada pelo usuário no Streamlit)
+    # FORÇANDO A BARRA LATERAL A APARECER
     with st.sidebar:
-        st.markdown(f"### ⚙️ Painel de Controle")
-        uploaded = st.file_uploader("Upload da Base", type=["xlsx", "csv"])
-        if uploaded:
-            st.success("Arquivo carregado!")
+        st.markdown(f"<h2 style='color:{ORANGE};'>📦 Menu de Dados</h2>", unsafe_allow_html=True)
+        uploaded = st.file_uploader("Arraste o arquivo aqui", type=["xlsx", "csv"])
+        st.markdown("---")
+        st.caption("Ezequiel Miranda - Sistema de Inventário")
     
     if not uploaded:
         st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.info("Aguardando upload da base no menu lateral para gerar o painel.")
+        st.warning("⚠️ O menu de upload está à esquerda. Clique na seta (>) no topo esquerdo se ele estiver escondido.")
         st.stop()
 
     # Processamento
@@ -250,41 +251,20 @@ def main():
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # --- TÍTULO PRINCIPAL ---
+    # --- INTERFACE ---
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
 
-    # --- MÉTRICAS PRINCIPAIS (COM DESIGN PREMIUM) ---
-    v_total = len(df)
-    v_verif = int((df['Situação'] == 'Verificados').sum())
-    v_pend = int((df['Situação'] == 'Pendente').sum())
-    v_desl = int((df['Situação'] == 'Deslocado').sum())
-
+    # Métricas
     st.markdown(f"""
     <div class="metric-row">
-        <div class="modern-card">
-            <div class="card-accent"></div>
-            <div class="m-label">Volume Total</div>
-            <div class="m-value">{v_total:,}</div>
-        </div>
-        <div class="modern-card">
-            <div class="card-accent" style="background:#22c55e"></div>
-            <div class="m-label">Verificados</div>
-            <div class="m-value">{v_verif:,}</div>
-        </div>
-        <div class="modern-card">
-            <div class="card-accent" style="background:#ef4444"></div>
-            <div class="m-label">Pendentes</div>
-            <div class="m-value">{v_pend:,}</div>
-        </div>
-        <div class="modern-card">
-            <div class="card-accent" style="background:#3b82f6"></div>
-            <div class="m-label">Deslocados</div>
-            <div class="m-value">{v_desl:,}</div>
-        </div>
+        <div class="modern-card"><div class="card-accent"></div><div class="m-label">Volume Total</div><div class="m-value">{len(df):,}</div></div>
+        <div class="modern-card"><div class="card-accent" style="background:#22c55e"></div><div class="m-label">Verificados</div><div class="m-value">{int((df['Situação'] == 'Verificados').sum()):,}</div></div>
+        <div class="modern-card"><div class="card-accent" style="background:#ef4444"></div><div class="m-label">Pendentes</div><div class="m-value">{int((df['Situação'] == 'Pendente').sum()):,}</div></div>
+        <div class="modern-card"><div class="card-accent" style="background:#3b82f6"></div><div class="m-label">Deslocados</div><div class="m-value">{int((df['Situação'] == 'Deslocado').sum()):,}</div></div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # --- PENDENTES POR ZONA (BORDAS LATERAIS LARANJAS) ---
+    # --- PENDENTES POR ZONA COM BORDA LATERAL ---
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -301,7 +281,7 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
 
-    # --- TABELA RESUMO HH ---
+    # --- TABELAS ---
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
@@ -311,7 +291,6 @@ def main():
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    # --- TABELAS DE CONFERENTES ---
     for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
         subset = df[(df["Situação"] == s) & df["Operador"].notna()]
         ops = sorted(subset["Operador"].unique())
