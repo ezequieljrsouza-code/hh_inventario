@@ -320,22 +320,32 @@ def main():
                 return;
             }}
 
-            html2canvas(area, {{
-                backgroundColor: "{BG_APP}",
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                letterRendering: true
-            }}).then(canvas => {{
-                const link = document.createElement('a');
-                const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
-                link.download = 'HH_Inventario_' + dataStr + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            }}).catch(err => {{
-                console.error("Erro na captura:", err);
-                alert("Falha ao gerar imagem.");
-            }});
+            // Move a tela para o topo para garantir a captura correta no Streamlit
+            window.parent.scrollTo(0, 0);
+
+            // Pequeno atraso para a tela terminar a rolagem antes da foto
+            setTimeout(() => {{
+                html2canvas(area, {{
+                    backgroundColor: "{BG_APP}",
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false, // allowTaint em true gera imagem corrompida/em branco
+                    scrollY: 0
+                }}).then(canvas => {{
+                    if (canvas.width === 0 || canvas.height === 0) {{
+                        alert("Erro ao renderizar a imagem.");
+                        return;
+                    }}
+                    const link = document.createElement('a');
+                    const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
+                    link.download = 'HH_Inventario_' + dataStr + '.png';
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                }}).catch(err => {{
+                    console.error("Erro na captura:", err);
+                    alert("Falha ao gerar imagem.");
+                }});
+            }}, 500);
         }});
         </script>
         """,
