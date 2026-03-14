@@ -74,7 +74,7 @@ def inject_css() -> None:
             transform: translateY(-5px);
         }}
 
-        /* Detalhe colorido no topo dos cards */
+        /* Detalhe colorido no topo dos cards de métricas */
         .card-accent {{
             position: absolute;
             top: 0;
@@ -159,7 +159,6 @@ def inject_css() -> None:
         unsafe_allow_html=True,
     )
 
-# Funções de Processamento
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
@@ -205,18 +204,17 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Caixa de Upload no topo da página
+    # 1. Caixa de Upload (Topo da Página)
     uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     
-    # Título Principal (agora fica abaixo do upload)
+    # 2. Título do Painel
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
     
-    # Verifica se o arquivo foi enviado
     if not uploaded:
-        st.info("Por favor, faça o upload da base de dados acima para visualizar o painel.")
+        st.info("Por favor, faça o upload da base de dados acima para iniciar.")
         st.stop()
 
-    # Processamento da base de dados
+    # Processamento
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
@@ -258,7 +256,7 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # --- ZONAS ---
+    # --- ZONAS (Com borda esquerda igual ao segundo código) ---
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -269,7 +267,16 @@ def main():
             val = counts.get(z, 0)
             with cols[i % 5]:
                 st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9">
+                <div style="
+                    background:white; 
+                    padding:20px; 
+                    border-radius:15px; 
+                    text-align:center; 
+                    box-shadow:0 4px 6px rgba(0,0,0,0.02); 
+                    margin-bottom:15px; 
+                    border: 1px solid #f1f5f9;
+                    border-left: 6px solid {ORANGE};
+                ">
                     <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
                     <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
                 </div>
