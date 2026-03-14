@@ -159,7 +159,7 @@ def inject_css() -> None:
         unsafe_allow_html=True,
     )
 
-# Funções de Processamento (Mantendo a lógica que já funciona perfeitamente)
+# Funções de Processamento
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [str(c).replace("\ufeff", "").strip().strip('"') for c in df.columns]
@@ -205,16 +205,18 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Cabeçalho de Upload
-    with st.sidebar:
-        uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
+    # Caixa de Upload no topo da página
+    uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     
+    # Título Principal (agora fica abaixo do upload)
+    st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
+    
+    # Verifica se o arquivo foi enviado
     if not uploaded:
-        st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
-        st.info("Por favor, faça o upload da base de dados no menu lateral.")
+        st.info("Por favor, faça o upload da base de dados acima para visualizar o painel.")
         st.stop()
 
-    # Processamento
+    # Processamento da base de dados
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
@@ -224,9 +226,6 @@ def main():
     base_h = min(valid_hours)
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
-
-    # --- TOP INTERFACE ---
-    st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
 
     # Métricas Premium
     v_total = len(df)
