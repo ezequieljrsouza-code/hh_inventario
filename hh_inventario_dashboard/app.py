@@ -204,10 +204,7 @@ def render_table(df: pd.DataFrame) -> None:
 def main():
     inject_css()
     
-    # Upload no topo
     uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
-    
-    # Título do Painel
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
     
     if not uploaded:
@@ -217,7 +214,6 @@ def main():
     # Início da Área de Captura
     st.markdown('<div id="capture-area">', unsafe_allow_html=True)
 
-    # Processamento
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
     df["Hora"] = df["Data de Escaneamento"].apply(parse_hour).astype("Int64")
@@ -228,13 +224,10 @@ def main():
     hours = list(range(base_h, base_h + 8))
     hour_labels = [f"{idx+1}ª Hora ({h:02d}h)" for idx, h in enumerate(hours)]
 
-    # Métricas
     v_total = len(df)
     v_verif = int((df['Situação'] == 'Verificados').sum())
     v_pend = int((df['Situação'] == 'Pendente').sum())
     v_desl = int((df['Situação'] == 'Deslocado').sum())
-    
-    # Cálculo da Acuracidade
     v_acu = (v_verif / v_total * 100) if v_total > 0 else 0.0
 
     st.markdown(f"""
@@ -247,7 +240,6 @@ def main():
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
-    # Zonas com borda esquerda
     if "Área" in df.columns:
         st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
         counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
@@ -264,7 +256,6 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
 
-    # Tabelas
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
@@ -286,10 +277,9 @@ def main():
         st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
         render_table(pd.DataFrame(op_rows))
 
-    # Fim da Área de Captura
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT DE CAPTURA COM SCALE 3 (EQUILÍBRIO QUALIDADE/ESTABILIDADE) ---
+    # --- SCRIPT DE CAPTURA COM SCALE 2 (MÁXIMA ESTABILIDADE) ---
     st.components.v1.html(
         f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -313,34 +303,25 @@ def main():
         const btn = document.getElementById('btn-screenshot');
         btn.addEventListener('click', function() {{
             const area = window.parent.document.querySelector("#capture-area");
-            
-            if (!area) {{
-                alert("Erro: Área de captura não encontrada.");
-                return;
-            }}
+            if (!area) return;
 
             window.parent.scrollTo(0, 0);
 
             setTimeout(() => {{
                 html2canvas(area, {{
                     backgroundColor: "{BG_APP}",
-                    scale: 3, 
+                    scale: 2, 
                     useCORS: true,
-                    allowTaint: false,
-                    scrollY: 0
+                    scrollY: 0,
+                    logging: false
                 }}).then(canvas => {{
-                    if (canvas.width === 0 || canvas.height === 0) {{
-                        alert("Erro de dimensão. Tente reduzir o zoom do navegador ou usar uma base menor.");
-                        return;
-                    }}
                     const link = document.createElement('a');
                     const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
                     link.download = 'HH_Inventario_' + dataStr + '.png';
-                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.href = canvas.toDataURL('image/png', 0.9);
                     link.click();
                 }}).catch(err => {{
-                    console.error("Erro na captura:", err);
-                    alert("Falha ao gerar imagem.");
+                    alert("A lista é muito longa para salvar como imagem única. Tente filtrar os dados.");
                 }});
             }}, 500);
         }});
