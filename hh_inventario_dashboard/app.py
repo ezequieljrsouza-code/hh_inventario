@@ -21,12 +21,9 @@ def inject_css() -> None:
     st.markdown(
         f"""
         <style>
-        /* ---------- TRECHO DE OCULTAR ELEMENTOS ---------- */
         header {{visibility: hidden;}}
         [data-testid="stToolbar"] {{display: none;}}
         [data-testid="stDecoration"] {{display: none;}}
-        
-        /* ---------- LIMPEZA E BASE ---------- */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         .stDeployButton {{display:none;}}
@@ -34,73 +31,26 @@ def inject_css() -> None:
         .stApp {{ background: {BG_APP}; }}
         .block-container {{ padding-top: 1.5rem; max-width: 95%; }}
 
-        /* ---------- TÍTULO HH INVENTÁRIO ---------- */
-        .main-header {{
-            text-align: center;
-            padding: 20px 0 40px 0;
-        }}
+        .main-header {{ text-align: center; padding: 20px 0 40px 0; }}
         .main-header h1 {{
             font-size: 3.5rem;
             font-weight: 900;
             color: {DARK_TEXT};
             margin: 0;
             letter-spacing: -2px;
-            background: linear-gradient(135deg, {DARK_TEXT} 0%, #334155 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }}
 
-        /* ---------- CONTAINER DE CARDS ---------- */
-        .metric-row {{
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 40px;
-        }}
-
+        .metric-row {{ display: flex; justify-content: space-between; gap: 20px; margin-bottom: 40px; }}
         .modern-card {{
             background: {WHITE};
             flex: 1;
             padding: 25px 20px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }}
-        
-        .modern-card:hover {{
-            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid {BORDER};
         }}
 
-        .card-accent {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: {ORANGE};
-        }}
-
-        .m-label {{
-            color: {METRIC_LABEL};
-            font-size: 0.95rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }}
-
-        .m-value {{
-            color: {DARK_TEXT};
-            font-size: 3.2rem;
-            font-weight: 900;
-            line-height: 1;
-        }}
-
-        /* ---------- SEÇÕES E TABELAS ---------- */
         .section-header {{
             background: {ORANGE};
             color: white;
@@ -109,7 +59,6 @@ def inject_css() -> None:
             font-weight: 800;
             font-size: 1.4rem;
             margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
 
         .table-container {{
@@ -117,43 +66,13 @@ def inject_css() -> None:
             border-radius: 0 0 15px 15px;
             padding: 5px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+            border: 1px solid {BORDER};
         }}
 
-        table.hh-table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 1.25rem;
-        }}
-
-        table.hh-table th {{
-            background: #fff;
-            color: {DARK_TEXT};
-            border-bottom: 2px solid {BG_APP};
-            padding: 15px;
-            font-weight: 800;
-        }}
-
-        table.hh-table td {{
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid {BG_APP};
-            color: {DARK_TEXT};
-        }}
-
-        table.hh-table td:first-child {{
-            text-align: left;
-            font-weight: 800;
-            background: #fdfdfd;
-            border-right: 2px solid {BG_APP};
-        }}
-
-        .total-cell {{
-            background: #f8fafc !important;
-            font-weight: 900 !important;
-            color: {ORANGE} !important;
-        }}
+        table.hh-table {{ width: 100%; border-collapse: collapse; font-size: 1.25rem; }}
+        table.hh-table th {{ background: #fff; padding: 15px; border-bottom: 2px solid {BG_APP}; }}
+        table.hh-table td {{ padding: 15px; text-align: center; border-bottom: 1px solid {BG_APP}; }}
+        .total-cell {{ font-weight: 900 !important; color: {ORANGE} !important; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -171,8 +90,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         elif "área" in low or "area" in low: rename_map[col] = "Área"
         elif "operador" in low: rename_map[col] = "Operador"
     df = df.rename(columns=rename_map)
-    for col in ["Área", "Operador", "Pacote"]:
-        if col not in df.columns: df[col] = pd.NA
     return df
 
 def parse_hour(value) -> float:
@@ -203,16 +120,15 @@ def render_table(df: pd.DataFrame) -> None:
 
 def main():
     inject_css()
-    
     uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
     
     if not uploaded:
-        st.info("Por favor, faça o upload da base de dados acima para iniciar.")
+        st.info("Por favor, faça o upload da base de dados.")
         st.stop()
 
-    # Início da Área de Captura
-    st.markdown('<div id="capture-area">', unsafe_allow_html=True)
+    # CONTAINER DE CAPTURA
+    st.markdown('<div id="capture-area" style="padding: 10px; background-color: #f1f5f9;">', unsafe_allow_html=True)
 
     df = pd.read_excel(uploaded) if uploaded.name.endswith('.xlsx') else pd.read_csv(uploaded)
     df = normalize_columns(df)
@@ -227,107 +143,62 @@ def main():
     v_total = len(df)
     v_verif = int((df['Situação'] == 'Verificados').sum())
     v_pend = int((df['Situação'] == 'Pendente').sum())
-    v_desl = int((df['Situação'] == 'Deslocado').sum())
     v_acu = (v_verif / v_total * 100) if v_total > 0 else 0.0
 
     st.markdown(f"""
     <div class="metric-row">
-        <div class="modern-card"><div class="card-accent"></div><div class="m-label">Volume Total</div><div class="m-value">{v_total:,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#22c55e"></div><div class="m-label">Verificados</div><div class="m-value">{v_verif:,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#ef4444"></div><div class="m-label">Pendentes</div><div class="m-value">{v_pend:,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#3b82f6"></div><div class="m-label">Deslocados</div><div class="m-value">{v_desl:,}</div></div>
-        <div class="modern-card"><div class="card-accent" style="background:#8b5cf6"></div><div class="m-label">Acuracidade</div><div class="m-value">{v_acu:.1f}%</div></div>
+        <div class="modern-card">Total: {v_total}</div>
+        <div class="modern-card" style="border-top: 5px solid green;">Verificados: {v_verif}</div>
+        <div class="modern-card" style="border-top: 5px solid red;">Pendentes: {v_pend}</div>
+        <div class="modern-card" style="border-top: 5px solid {ORANGE};">Acuracidade: {v_acu:.1f}%</div>
     </div>
-    """.replace(",", "."), unsafe_allow_html=True)
-
-    if "Área" in df.columns:
-        st.markdown("<div class='section-header'>Pendentes por Zona</div>", unsafe_allow_html=True)
-        counts = df[df["Situação"]=="Pendente"]["Área"].value_counts().to_dict()
-        zonas = ["Returns","Sorting","Problem Solving","Missort","Fraude","Damaged","Buffered","Dispatch","Containerized","Bulky returns"]
-        
-        cols = st.columns(5)
-        for i, z in enumerate(zonas):
-            val = counts.get(z, 0)
-            with cols[i % 5]:
-                st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9; border-left: 6px solid {ORANGE};">
-                    <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
-                    <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
-                </div>
-                """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
-        row = OrderedDict({"QTD / Status": s})
+        row = OrderedDict({"Status": s})
         for h, lab in zip(hours, hour_labels): row[lab] = int(((df["Situação"]==s) & (df["Hora"]==h)).sum())
         row["TOTAL"] = int((df["Situação"]==s).sum())
         rows.append(row)
     render_table(pd.DataFrame(rows))
 
-    for s, title in [("Verificados", "Verificados / Conferentes"), ("Deslocado", "Deslocados / Conferentes")]:
-        subset = df[(df["Situação"] == s) & df["Operador"].notna()]
-        ops = sorted(subset["Operador"].unique())
-        op_rows = []
-        for o in ops:
-            r = OrderedDict({title: o})
-            for h, lab in zip(hours, hour_labels): r[lab] = int(((subset["Operador"]==o) & (subset["Hora"]==h)).sum())
-            r["TOTAL"] = int((subset["Operador"]==o).sum())
-            op_rows.append(r)
-        st.markdown(f"<div class='section-header'>{title}: {len(ops)}</div>", unsafe_allow_html=True)
-        render_table(pd.DataFrame(op_rows))
-
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT DE CAPTURA COM SCALE 2 (MÁXIMA ESTABILIDADE) ---
+    # SCRIPT DE CAPTURA ULTRA-ROBUSTO
     st.components.v1.html(
         f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <div style="position: fixed; bottom: 10px; left: 10px; z-index: 9999;">
-            <button id="btn-screenshot" style="
-                background-color: {ORANGE};
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 50px;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                font-family: sans-serif;
-            ">
-                📸 Salvar PNG
-            </button>
-        </div>
+        <button id="cap-btn" style="background:{ORANGE}; color:white; border:none; padding:12px 24px; border-radius:50px; font-weight:bold; cursor:pointer; position:fixed; bottom:20px; left:20px; z-index:10000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+            📸 Salvar Imagem HD
+        </button>
 
         <script>
-        const btn = document.getElementById('btn-screenshot');
-        btn.addEventListener('click', function() {{
+        document.getElementById('cap-btn').addEventListener('click', function() {{
             const area = window.parent.document.querySelector("#capture-area");
-            if (!area) return;
-
-            window.parent.scrollTo(0, 0);
-
-            setTimeout(() => {{
-                html2canvas(area, {{
-                    backgroundColor: "{BG_APP}",
-                    scale: 2, 
-                    useCORS: true,
-                    scrollY: 0,
-                    logging: false
-                }}).then(canvas => {{
-                    const link = document.createElement('a');
-                    const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
-                    link.download = 'HH_Inventario_' + dataStr + '.png';
-                    link.href = canvas.toDataURL('image/png', 0.9);
-                    link.click();
-                }}).catch(err => {{
-                    alert("A lista é muito longa para salvar como imagem única. Tente filtrar os dados.");
-                }});
-            }}, 500);
+            
+            window.parent.scrollTo(0,0);
+            
+            html2canvas(area, {{
+                scale: 2,
+                backgroundColor: "#f1f5f9",
+                useCORS: true,
+                allowTaint: true,
+                logging: true,
+                width: area.offsetWidth,
+                height: area.offsetHeight,
+                windowWidth: area.scrollWidth,
+                windowHeight: area.scrollHeight
+            }}).then(canvas => {{
+                const link = document.createElement('a');
+                link.download = 'HH_Inventario.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }}).catch(err => alert("Erro ao gerar: " + err));
         }});
         </script>
         """,
-        height=70,
+        height=80,
     )
 
 if __name__ == "__main__":
