@@ -289,7 +289,7 @@ def main():
     # Fim da Área de Captura
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT DE CAPTURA ROBUSTO (BOTÃO LADO ESQUERDO) ---
+    # --- SCRIPT DE CAPTURA COM SCALE 3 (EQUILÍBRIO QUALIDADE/ESTABILIDADE) ---
     st.components.v1.html(
         f"""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -312,28 +312,25 @@ def main():
         <script>
         const btn = document.getElementById('btn-screenshot');
         btn.addEventListener('click', function() {{
-            // Busca a área no documento pai do Streamlit
             const area = window.parent.document.querySelector("#capture-area");
             
             if (!area) {{
-                alert("Erro: Área de captura não encontrada. Tente carregar o arquivo novamente.");
+                alert("Erro: Área de captura não encontrada.");
                 return;
             }}
 
-            // Move a tela para o topo para garantir a captura correta no Streamlit
             window.parent.scrollTo(0, 0);
 
-            // Pequeno atraso para a tela terminar a rolagem antes da foto
             setTimeout(() => {{
                 html2canvas(area, {{
                     backgroundColor: "{BG_APP}",
-                    scale: 4, // <-- ALTERADO DE 2 PARA 4 PARA ALTA RESOLUÇÃO
+                    scale: 3, 
                     useCORS: true,
-                    allowTaint: false, // allowTaint em true gera imagem corrompida/em branco
+                    allowTaint: false,
                     scrollY: 0
                 }}).then(canvas => {{
                     if (canvas.width === 0 || canvas.height === 0) {{
-                        alert("Erro ao renderizar a imagem.");
+                        alert("Erro de dimensão. Tente reduzir o zoom do navegador ou usar uma base menor.");
                         return;
                     }}
                     const link = document.createElement('a');
