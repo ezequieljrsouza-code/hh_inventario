@@ -327,7 +327,7 @@ def main():
             setTimeout(() => {{
                 html2canvas(area, {{
                     backgroundColor: "{BG_APP}",
-                    scale: 2,
+                    scale: 4, // <-- ALTERADO DE 2 PARA 4 PARA ALTA RESOLUÇÃO
                     useCORS: true,
                     allowTaint: false, // allowTaint em true gera imagem corrompida/em branco
                     scrollY: 0
