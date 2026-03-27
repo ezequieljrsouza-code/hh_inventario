@@ -279,7 +279,7 @@ def main():
         <div class="main-header">
             <div class="main-header-inner">
                 <h1><span class="accent">HH</span> Inventário</h1>
-                <div class="subtitle">Painel de Controle Operacional</div>
+                <div class="subtitle">Analista: Ezequiel Miranda</div>
             </div>
         </div>
     ''', unsafe_allow_html=True)
