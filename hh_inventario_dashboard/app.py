@@ -363,67 +363,82 @@ def main():
     # Fim da Área de Captura
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- SCRIPT DE CAPTURA ROBUSTO (BOTÃO LADO ESQUERDO) ---
-    st.components.v1.html(
+    # --- BOTÃO DE CAPTURA: injeta html2canvas + lógica direto no documento pai ---
+    st.markdown(
         f"""
+        <!-- Carrega html2canvas no documento principal (não em iframe) -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <div style="position: fixed; bottom: 10px; left: 10px; z-index: 9999;">
-            <button id="btn-screenshot" style="
-                background-color: {ORANGE};
+
+        <!-- Botão flutuante -->
+        <div id="hh-btn-wrapper" style="
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 99999;
+        ">
+            <button id="hh-btn-screenshot" onclick="hhCapturar()" style="
+                background: linear-gradient(135deg, {ORANGE}, #d97706);
                 color: white;
                 border: none;
-                padding: 12px 24px;
+                padding: 13px 28px;
                 border-radius: 50px;
-                font-weight: bold;
+                font-weight: 800;
+                font-size: 1rem;
                 cursor: pointer;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                box-shadow: 0 6px 20px rgba(245,158,11,0.45);
                 font-family: sans-serif;
-            ">
+                letter-spacing: 0.5px;
+                transition: opacity 0.2s;
+            " onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
                 📸 Salvar PNG
             </button>
         </div>
 
         <script>
-        const btn = document.getElementById('btn-screenshot');
-        btn.addEventListener('click', function() {{
-            const area = window.parent.document.querySelector("#capture-area");
-            
-            if (!area) {{
-                alert("Erro: Área de captura não encontrada. Tente carregar o arquivo novamente.");
-                return;
-            }}
+        function hhCapturar() {{
+            const btn = document.getElementById('hh-btn-screenshot');
+            btn.textContent = '⏳ Gerando...';
+            btn.disabled = true;
 
-            window.parent.scrollTo(0, 0);
+            // Captura a página inteira — sem depender de #capture-area no iframe
+            window.scrollTo(0, 0);
 
-            setTimeout(() => {{
-                html2canvas(area, {{
+            setTimeout(function() {{
+                html2canvas(document.body, {{
                     backgroundColor: "{BG_APP}",
                     scale: 2,
                     useCORS: true,
                     allowTaint: false,
-                    scrollY: 0,
-                    logging: false,
-                    imageTimeout: 0,
-                    removeContainer: true
-                }}).then(canvas => {{
-                    if (canvas.width === 0 || canvas.height === 0) {{
-                        alert("Erro ao renderizar a imagem.");
-                        return;
+                    scrollY: -window.scrollY,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight,
+                    ignoreElements: function(el) {{
+                        // Ignora o próprio botão para não aparecer na imagem
+                        return el.id === 'hh-btn-wrapper';
                     }}
-                    const link = document.createElement('a');
-                    const dataStr = new Date().toLocaleDateString().replace(/\//g, '-');
+                }}).then(function(canvas) {{
+                    btn.textContent = '✅ Salvo!';
+                    setTimeout(function() {{
+                        btn.textContent = '📸 Salvar PNG';
+                        btn.disabled = false;
+                    }}, 2000);
+
+                    var link = document.createElement('a');
+                    var dataStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
                     link.download = 'HH_Inventario_' + dataStr + '.png';
                     link.href = canvas.toDataURL('image/png', 1.0);
                     link.click();
-                }}).catch(err => {{
-                    console.error("Erro na captura:", err);
-                    alert("Falha ao gerar imagem.");
+                }}).catch(function(err) {{
+                    console.error('Erro na captura:', err);
+                    btn.textContent = '❌ Erro';
+                    btn.disabled = false;
+                    setTimeout(function() {{ btn.textContent = '📸 Salvar PNG'; }}, 2000);
                 }});
-            }}, 500);
-        }});
+            }}, 300);
+        }}
         </script>
         """,
-        height=70,
+        unsafe_allow_html=True,
     )
 
 if __name__ == "__main__":
