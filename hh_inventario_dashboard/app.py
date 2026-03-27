@@ -37,42 +37,72 @@ def inject_css() -> None:
         /* ---------- TÍTULO HH INVENTÁRIO ---------- */
         .main-header {{
             text-align: center;
-            padding: 20px 0 40px 0;
+            padding: 10px 0 30px 0;
+        }}
+        .main-header-inner {{
+            display: inline-block;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e3a5f 100%);
+            padding: 18px 60px 16px 60px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.35), 0 2px 8px rgba(245,158,11,0.15);
+            border-top: 4px solid {ORANGE};
+            position: relative;
+            overflow: hidden;
+        }}
+        .main-header-inner::before {{
+            content: '';
+            position: absolute;
+            top: -30px; left: -30px;
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }}
+        .main-header-inner::after {{
+            content: '';
+            position: absolute;
+            bottom: -30px; right: -30px;
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%);
+            pointer-events: none;
         }}
         .main-header h1 {{
-            font-size: 3.5rem;
+            font-size: 3.2rem;
             font-weight: 900;
-            color: {DARK_TEXT};
+            color: {WHITE};
             margin: 0;
-            letter-spacing: -2px;
-            background: linear-gradient(135deg, {DARK_TEXT} 0%, #334155 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }}
+        .main-header h1 span.accent {{
+            color: {ORANGE};
+        }}
+        .main-header .subtitle {{
+            color: rgba(255,255,255,0.55);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 4px;
         }}
 
         /* ---------- CONTAINER DE CARDS ---------- */
         .metric-row {{
             display: flex;
             justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 40px;
+            gap: 16px;
+            margin-bottom: 32px;
         }}
 
         .modern-card {{
             background: {WHITE};
             flex: 1;
-            padding: 25px 20px;
-            border-radius: 20px;
+            padding: 22px 16px;
+            border-radius: 16px;
             text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+            border: 1px solid {BORDER};
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease;
-        }}
-        
-        .modern-card:hover {{
-            transform: translateY(-5px);
         }}
 
         .card-accent {{
@@ -86,16 +116,16 @@ def inject_css() -> None:
 
         .m-label {{
             color: {METRIC_LABEL};
-            font-size: 0.95rem;
+            font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }}
 
         .m-value {{
             color: {DARK_TEXT};
-            font-size: 3.2rem;
+            font-size: 2.8rem;
             font-weight: 900;
             line-height: 1;
         }}
@@ -104,42 +134,46 @@ def inject_css() -> None:
         .section-header {{
             background: {ORANGE};
             color: white;
-            padding: 12px 20px;
-            border-radius: 15px 15px 0 0;
+            padding: 11px 20px;
+            border-radius: 12px 12px 0 0;
             font-weight: 800;
-            font-size: 1.4rem;
-            margin-top: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-size: 1.25rem;
+            margin-top: 18px;
+            box-shadow: 0 2px 6px rgba(245,158,11,0.2);
         }}
 
         .table-container {{
             background: {WHITE};
-            border-radius: 0 0 15px 15px;
+            border-radius: 0 0 12px 12px;
             padding: 5px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            border: 1px solid {BORDER};
+            border-top: none;
             overflow: hidden;
         }}
 
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.25rem;
+            font-size: 1.1rem;
         }}
 
         table.hh-table th {{
-            background: #fff;
+            background: #f8fafc;
             color: {DARK_TEXT};
             border-bottom: 2px solid {BG_APP};
-            padding: 15px;
+            padding: 12px 10px;
             font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
         }}
 
         table.hh-table td {{
-            padding: 15px;
+            padding: 12px 10px;
             text-align: center;
             border-bottom: 1px solid {BG_APP};
             color: {DARK_TEXT};
+            font-size: 1rem;
         }}
 
         table.hh-table td:first-child {{
@@ -150,9 +184,42 @@ def inject_css() -> None:
         }}
 
         .total-cell {{
-            background: #f8fafc !important;
+            background: #fffbeb !important;
             font-weight: 900 !important;
             color: {ORANGE} !important;
+            border-left: 2px solid #fde68a !important;
+        }}
+
+        /* ---------- PRINT OPTIMIZATIONS ---------- */
+        @media print {{
+            .stApp, body {{ background: #ffffff !important; }}
+            .block-container {{ padding-top: 0.5rem !important; max-width: 100% !important; }}
+            .modern-card {{
+                box-shadow: none !important;
+                border: 2px solid {BORDER} !important;
+                break-inside: avoid;
+            }}
+            .main-header-inner {{
+                box-shadow: none !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }}
+            .section-header {{
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                box-shadow: none !important;
+            }}
+            .table-container {{
+                box-shadow: none !important;
+                break-inside: avoid;
+            }}
+            table.hh-table th,
+            table.hh-table td {{
+                padding: 8px !important;
+                font-size: 0.85rem !important;
+            }}
+            .m-value {{ font-size: 2rem !important; }}
+            .metric-row {{ gap: 8px !important; margin-bottom: 16px !important; }}
         }}
         </style>
         """,
@@ -207,8 +274,15 @@ def main():
     # Upload no topo
     uploaded = st.file_uploader("📂 Base de Dados", type=["xlsx", "csv"])
     
-    # Título do Painel
-    st.markdown('<div class="main-header"><h1>HH Inventário</h1></div>', unsafe_allow_html=True)
+    # Título do Painel — com fundo escuro e destaque laranja
+    st.markdown('''
+        <div class="main-header">
+            <div class="main-header-inner">
+                <h1><span class="accent">HH</span> Inventário</h1>
+                <div class="subtitle">Painel de Controle Operacional</div>
+            </div>
+        </div>
+    ''', unsafe_allow_html=True)
     
     if not uploaded:
         st.info("Por favor, faça o upload da base de dados acima para iniciar.")
@@ -258,9 +332,9 @@ def main():
             val = counts.get(z, 0)
             with cols[i % 5]:
                 st.markdown(f"""
-                <div style="background:white; padding:20px; border-radius:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.02); margin-bottom:15px; border: 1px solid #f1f5f9; border-left: 6px solid {ORANGE};">
-                    <div style="font-size:0.8rem; color:#64748b; font-weight:800; text-transform:uppercase;">{z}</div>
-                    <div style="font-size:1.8rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
+                <div style="background:white; padding:16px; border-radius:12px; text-align:center; margin-bottom:12px; border: 1px solid {BORDER}; border-left: 5px solid {ORANGE};">
+                    <div style="font-size:0.75rem; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">{z}</div>
+                    <div style="font-size:1.7rem; font-weight:900; color:{DARK_TEXT}">{val}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -312,7 +386,6 @@ def main():
         <script>
         const btn = document.getElementById('btn-screenshot');
         btn.addEventListener('click', function() {{
-            // Busca a área no documento pai do Streamlit
             const area = window.parent.document.querySelector("#capture-area");
             
             if (!area) {{
@@ -320,17 +393,18 @@ def main():
                 return;
             }}
 
-            // Move a tela para o topo para garantir a captura correta no Streamlit
             window.parent.scrollTo(0, 0);
 
-            // Pequeno atraso para a tela terminar a rolagem antes da foto
             setTimeout(() => {{
                 html2canvas(area, {{
                     backgroundColor: "{BG_APP}",
                     scale: 2,
                     useCORS: true,
-                    allowTaint: false, // allowTaint em true gera imagem corrompida/em branco
-                    scrollY: 0
+                    allowTaint: false,
+                    scrollY: 0,
+                    logging: false,
+                    imageTimeout: 0,
+                    removeContainer: true
                 }}).then(canvas => {{
                     if (canvas.width === 0 || canvas.height === 0) {{
                         alert("Erro ao renderizar a imagem.");
