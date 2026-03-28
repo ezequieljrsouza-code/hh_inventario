@@ -341,7 +341,7 @@ def main():
                 """, unsafe_allow_html=True)
 
     # Tabelas
-    st.markdown("<div class='section-header'>Resumo Operacional HH</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Resumo HH Por Status</div>", unsafe_allow_html=True)
     rows = []
     for s in STATUS_ORDER:
         row = OrderedDict({"QTD / Status": s})
