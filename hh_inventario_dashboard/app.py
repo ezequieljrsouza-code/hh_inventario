@@ -155,30 +155,32 @@ def inject_css() -> None:
         table.hh-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
+            font-weight: 700;
         }}
 
         table.hh-table th {{
             background: #f8fafc;
             color: {DARK_TEXT};
             border-bottom: 2px solid {BG_APP};
-            padding: 12px 10px;
-            font-weight: 800;
-            font-size: 0.95rem;
+            padding: 14px 12px;
+            font-weight: 900;
+            font-size: 1.15rem;
             letter-spacing: 0.3px;
         }}
 
         table.hh-table td {{
-            padding: 12px 10px;
+            padding: 14px 12px;
             text-align: center;
             border-bottom: 1px solid {BG_APP};
             color: {DARK_TEXT};
-            font-size: 1rem;
+            font-size: 1.3rem;
+            font-weight: 700;
         }}
 
         table.hh-table td:first-child {{
             text-align: left;
-            font-weight: 800;
+            font-weight: 900;
             background: #fdfdfd;
             border-right: 2px solid {BG_APP};
         }}
@@ -362,84 +364,6 @@ def main():
 
     # Fim da Área de Captura
     st.markdown('</div>', unsafe_allow_html=True)
-
-    # --- BOTÃO DE CAPTURA: injeta html2canvas + lógica direto no documento pai ---
-    st.markdown(
-        f"""
-        <!-- Carrega html2canvas no documento principal (não em iframe) -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-        <!-- Botão flutuante -->
-        <div id="hh-btn-wrapper" style="
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 99999;
-        ">
-            <button id="hh-btn-screenshot" onclick="hhCapturar()" style="
-                background: linear-gradient(135deg, {ORANGE}, #d97706);
-                color: white;
-                border: none;
-                padding: 13px 28px;
-                border-radius: 50px;
-                font-weight: 800;
-                font-size: 1rem;
-                cursor: pointer;
-                box-shadow: 0 6px 20px rgba(245,158,11,0.45);
-                font-family: sans-serif;
-                letter-spacing: 0.5px;
-                transition: opacity 0.2s;
-            " onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
-                📸 Salvar PNG
-            </button>
-        </div>
-
-        <script>
-        function hhCapturar() {{
-            const btn = document.getElementById('hh-btn-screenshot');
-            btn.textContent = '⏳ Gerando...';
-            btn.disabled = true;
-
-            // Captura a página inteira — sem depender de #capture-area no iframe
-            window.scrollTo(0, 0);
-
-            setTimeout(function() {{
-                html2canvas(document.body, {{
-                    backgroundColor: "{BG_APP}",
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: false,
-                    scrollY: -window.scrollY,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight,
-                    ignoreElements: function(el) {{
-                        // Ignora o próprio botão para não aparecer na imagem
-                        return el.id === 'hh-btn-wrapper';
-                    }}
-                }}).then(function(canvas) {{
-                    btn.textContent = '✅ Salvo!';
-                    setTimeout(function() {{
-                        btn.textContent = '📸 Salvar PNG';
-                        btn.disabled = false;
-                    }}, 2000);
-
-                    var link = document.createElement('a');
-                    var dataStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-                    link.download = 'HH_Inventario_' + dataStr + '.png';
-                    link.href = canvas.toDataURL('image/png', 1.0);
-                    link.click();
-                }}).catch(function(err) {{
-                    console.error('Erro na captura:', err);
-                    btn.textContent = '❌ Erro';
-                    btn.disabled = false;
-                    setTimeout(function() {{ btn.textContent = '📸 Salvar PNG'; }}, 2000);
-                }});
-            }}, 300);
-        }}
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
 
 if __name__ == "__main__":
     main()
